@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site com Fundo Azul</title>
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(to bottom, #001f3f, #0074D9);
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        h1 {
+            font-size: 3rem;
+        }
+        video {
+            margin-top: 20px;
+            max-width: 90%;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Bem-vindo ao meu site!</h1>
+        <video controls>
+            <source src="video.mp4" type="video/mp4">
+            Seu navegador não suporta a reprodução de vídeos.
+        </video>
+    </div>
+</body>
+</html>
