@@ -1,40 +1,266 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site com Fundo Azul</title>
+    <title>AssistiveTouch Web</title>
     <style>
-        body {
+        * {
             margin: 0;
-            background: linear-gradient(to bottom, #001f3f, #0074D9);
-            color: white;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        body {
+            background-color: white;
+            min-height: 200vh; /* Conteúdo longo para demonstrar a flutuação */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        
         .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            color: #222;
+        }
+        
+        p {
+            margin-bottom: 20px;
+        }
+        
+        #assistive-touch {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         }
-        h1 {
-            font-size: 3rem;
+        
+        #assistive-touch:hover {
+            transform: scale(1.1);
+            background-color: rgba(0, 0, 0, 0.6);
         }
-        video {
-            margin-top: 20px;
-            max-width: 90%;
-            border: 2px solid white;
+        
+        #assistive-touch::before {
+            content: "";
+            width: 30px;
+            height: 30px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        #assistive-touch::after {
+            content: "";
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        #menu {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        #menu.open {
+            width: 250px;
+            height: 250px;
+            pointer-events: auto;
+        }
+        
+        .menu-item {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+            transform: translate(0, 0) scale(0.5);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        #menu.open .menu-item {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+        }
+        
+        #menu.open .menu-item:nth-child(1) { transform: translate(0, -90px); }
+        #menu.open .menu-item:nth-child(2) { transform: translate(65px, -65px); }
+        #menu.open .menu-item:nth-child(3) { transform: translate(90px, 0); }
+        #menu.open .menu-item:nth-child(4) { transform: translate(65px, 65px); }
+        #menu.open .menu-item:nth-child(5) { transform: translate(0, 90px); }
+        #menu.open .menu-item:nth-child(6) { transform: translate(-65px, 65px); }
+        #menu.open .menu-item:nth-child(7) { transform: translate(-90px, 0); }
+        #menu.open .menu-item:nth-child(8) { transform: translate(-65px, -65px); }
+        
+        .menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1) !important;
+        }
+        
+        .menu-label {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        .menu-item:hover .menu-label {
+            opacity: 1;
+            transform: translateY(-40px);
+        }
+        
+        /* Estilo para o botão de fechar */
+        #close-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #ff3b30;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            font-weight: bold;
+        }
+        
+        #close-button:hover {
+            background-color: #ff6b63;
         }
     </style>
 </head>
 <body>
+    <button id="close-button">Fechar AssistiveTouch</button>
+    
     <div class="content">
-        <h1>Bem-vindo ao meu site!</h1>
-        <video controls>
-            <source src="video.mp4" type="video/mp4">
-            Seu navegador não suporta a reprodução de vídeos.
-        </video>
+        <h1>AssistiveTouch para Web</h1>
+        <p>Este é um exemplo de site com um ícone flutuante similar ao AssistiveTouch da Apple. O ícone permanecerá visível e acessível em qualquer parte do site, mesmo quando você rolar a página.</p>
+        
+        <p>Role para baixo para testar o comportamento flutuante do ícone.</p>
+        
+        <h2>Funcionalidades</h2>
+        <ul>
+            <li>Ícone flutuante sempre visível</li>
+            <li>Menu circular com opções</li>
+            <li>Animações suaves</li>
+            <li>Design responsivo</li>
+            <li>Botão para fechar o assistive touch</li>
+        </ul>
+        
+        <h2>Como usar</h2>
+        <p>Clique no ícone flutuante no canto inferior direito para abrir o menu. Clique em qualquer opção do menu para ver uma demonstração de sua funcionalidade.</p>
+        
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl.</p>
+        
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl.</p>
+        
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl. Nullam euismod, nisl eget ultricies ultricies, nunc nisl aliquam nunc, eget aliquam nisl nisl eget nisl.</p>
     </div>
+    
+    <div id="menu">
+        <div class="menu-item">🏠<span class="menu-label">Início</span></div>
+        <div class="menu-item">🔍<span class="menu-label">Pesquisar</span></div>
+        <div class="menu-item">⚙️<span class="menu-label">Configurações</span></div>
+        <div class="menu-item">📷<span class="menu-label">Câmera</span></div>
+        <div class="menu-item">🔔<span class="menu-label">Notificações</span></div>
+        <div class="menu-item">📱<span class="menu-label">Dispositivos</span></div>
+        <div class="menu-item">🔒<span class="menu-label">Segurança</span></div>
+        <div class="menu-item">❌<span class="menu-label">Fechar Menu</span></div>
+    </div>
+    
+    <div id="assistive-touch"></div>
+
+    <script>
+        const assistiveTouch = document.getElementById('assistive-touch');
+        const menu = document.getElementById('menu');
+        const closeButton = document.getElementById('close-button');
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        // Abrir/fechar menu ao clicar no ícone
+        assistiveTouch.addEventListener('click', function(e) {
+            e.stopPropagation();
+            menu.classList.toggle('open');
+        });
+        
+        // Fechar menu ao clicar fora dele
+        document.addEventListener('click', function(e) {
+            if (menu.classList.contains('open') && !e.target.closest('#menu') && e.target !== assistiveTouch) {
+                menu.classList.remove('open');
+            }
+        });
+        
+        // Ações para os itens do menu
+        menuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const label = this.querySelector('.menu-label').textContent;
+                
+                if (label === 'Fechar Menu') {
+                    menu.classList.remove('open');
+                } else {
+                    alert(`Funcionalidade: ${label}`);
+                    menu.classList.remove('open');
+                }
+            });
+        });
+        
+        // Fechar o assistive touch completamente
+        closeButton.addEventListener('click', function() {
+            assistiveTouch.style.display = 'none';
+            menu.style.display = 'none';
+            alert('AssistiveTouch fechado. Recarregue a página para vê-lo novamente.');
+        });
+        
+        // Adicionar um pouco de movimento ao ícone para chamar atenção
+        setTimeout(() => {
+            assistiveTouch.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                assistiveTouch.style.transform = 'scale(1)';
+            }, 300);
+        }, 2000);
+    </script>
 </body>
 </html>
