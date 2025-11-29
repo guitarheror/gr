@@ -1,111 +1,760 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Boneco de Neve Realista</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Character Rigging & Animation Studio</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #gui-container { position: absolute; top: 10px; right: 10px; }
-        #controls {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; z-index: 10;
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #166088;
+            --accent: #4fc3a1;
+            --dark: #2d3e50;
+            --light: #f5f7fa;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --success: #2ecc71;
         }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        header {
+            background-color: var(--dark);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .toolbar {
+            width: 70px;
+            background-color: var(--dark);
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            align-items: center;
+        }
+        
+        .tool-button {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        
+        .tool-button:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .tool-button.active {
+            background-color: var(--accent);
+            color: var(--dark);
+        }
+        
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background-color: #e0e5ec;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #characterCanvas {
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .properties-panel {
+            width: 300px;
+            background-color: white;
+            border-left: 1px solid #ddd;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .panel-section {
+            margin-bottom: 25px;
+        }
+        
+        .panel-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            color: var(--secondary);
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        input[type="range"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
         button {
-            padding: 12px 25px; font-size: 16px; cursor: pointer;
-            background: #ff4500; border: none; color: white; border-radius: 50px;
-            font-family: sans-serif; font-weight: bold; box-shadow: 0 4px 10px rgba(255, 69, 0, 0.4);
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-weight: 500;
         }
-        button.recording { background: red; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        button:hover {
+            background-color: var(--secondary);
+        }
+        
+        button.accent {
+            background-color: var(--accent);
+        }
+        
+        button.accent:hover {
+            background-color: #3da98a;
+        }
+        
+        button.danger {
+            background-color: var(--danger);
+        }
+        
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .timeline {
+            height: 150px;
+            background-color: white;
+            border-top: 1px solid #ddd;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        
+        .timeline-track {
+            height: 60px;
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            position: relative;
+        }
+        
+        .keyframe {
+            width: 12px;
+            height: 12px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 500px;
+            max-width: 90%;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .tab {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--accent);
+            color: var(--accent);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .bone {
+            position: absolute;
+            background-color: rgba(79, 195, 161, 0.7);
+            transform-origin: 0 0;
+            z-index: 10;
+        }
+        
+        .joint {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: move;
+            z-index: 20;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .file-upload-area:hover {
+            border-color: var(--accent);
+        }
+        
+        .file-upload-area i {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background-color: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
-
-    <div id="controls">
-        <button id="btnRecord">Gravar Ação</button>
+    <div class="container">
+        <header>
+            <div class="logo">2D Rigging Studio</div>
+            <div>
+                <button id="importBtn">Import Image</button>
+                <button id="autoRigBtn" class="accent">Auto-Rig</button>
+                <button id="animateBtn">Animate</button>
+                <button id="exportBtn">Export</button>
+            </div>
+        </header>
+        
+        <div class="main-content">
+            <div class="toolbar">
+                <div class="tool-button active" title="Select">
+                    <i>↔</i>
+                </div>
+                <div class="tool-button" title="Add Joint">
+                    <i>⊕</i>
+                </div>
+                <div class="tool-button" title="Add Bone">
+                    <i>─</i>
+                </div>
+                <div class="tool-button" title="Rotate">
+                    <i>↻</i>
+                </div>
+                <div class="tool-button" title="Scale">
+                    <i>⇲</i>
+                </div>
+            </div>
+            
+            <div class="workspace">
+                <div class="canvas-container">
+                    <canvas id="characterCanvas" width="800" height="600"></canvas>
+                </div>
+                
+                <div class="timeline">
+                    <div class="timeline-track" id="rootTrack">
+                        <div class="keyframe" style="left: 50px;"></div>
+                        <div class="keyframe" style="left: 150px;"></div>
+                        <div class="keyframe" style="left: 250px;"></div>
+                    </div>
+                    <div class="timeline-track" id="armTrack">
+                        <div class="keyframe" style="left: 30px;"></div>
+                        <div class="keyframe" style="left: 120px;"></div>
+                        <div class="keyframe" style="left: 210px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="properties-panel">
+                <div class="panel-section">
+                    <div class="panel-title">Rig Properties</div>
+                    <div class="control-group">
+                        <label for="rigName">Rig Name</label>
+                        <input type="text" id="rigName" value="Character Rig">
+                    </div>
+                    <div class="control-group">
+                        <label for="rigType">Rig Type</label>
+                        <select id="rigType">
+                            <option>Humanoid</option>
+                            <option>Quadruped</option>
+                            <option>Custom</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">Selected Bone</div>
+                    <div class="control-group">
+                        <label for="boneName">Bone Name</label>
+                        <input type="text" id="boneName" value="Upper Arm">
+                    </div>
+                    <div class="control-group">
+                        <label for="boneLength">Length</label>
+                        <input type="range" id="boneLength" min="10" max="200" value="80">
+                    </div>
+                    <div class="control-group">
+                        <label for="boneRotation">Rotation</label>
+                        <input type="range" id="boneRotation" min="-180" max="180" value="0">
+                    </div>
+                </div>
+                
+                <div class="panel-section">
+                    <div class="panel-title">Animation</div>
+                    <div class="control-group">
+                        <label for="animationSpeed">Speed</label>
+                        <input type="range" id="animationSpeed" min="0.1" max="2" step="0.1" value="1">
+                    </div>
+                    <div class="control-group">
+                        <button id="playAnimation" class="accent">Play</button>
+                        <button id="stopAnimation">Stop</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Import Image Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Import Character Image</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="file-upload-area" id="dropArea">
+                <i>📁</i>
+                <p>Drag & drop your character image here</p>
+                <p>or</p>
+                <button id="browseBtn">Browse Files</button>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="progress-bar">
+                <div class="progress" id="uploadProgress"></div>
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="cancelImport">Cancel</button>
+                <button id="confirmImport" class="accent" disabled>Import</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Auto-Rig Analysis Modal -->
+    <div id="analysisModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Rigging Analysis</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <p>We've analyzed your character and detected the following joints:</p>
+            
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="auto">Auto-Detected</div>
+                    <div class="tab" data-tab="manual">Manual Adjust</div>
+                </div>
+                
+                <div class="tab-content active" id="autoTab">
+                    <div style="margin: 15px 0;">
+                        <img id="analysisPreview" src="" alt="Analysis Preview" style="max-width: 100%; border: 1px solid #eee;">
+                    </div>
+                    <p>Detected joints: Head, Shoulders, Elbows, Hips, Knees</p>
+                    <div style="margin-top: 15px;">
+                        <button id="acceptRig" class="accent">Accept Rig</button>
+                        <button id="modifyRig">Modify Rig</button>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="manualTab">
+                    <p>Manually adjust the joint positions:</p>
+                    <div style="margin: 15px 0; height: 200px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                        Manual adjustment interface would appear here
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button id="saveManualRig" class="accent">Save Changes</button>
+                        <button id="cancelManual">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    <script>
+        // DOM Elements
+        const importModal = document.getElementById('importModal');
+        const analysisModal = document.getElementById('analysisModal');
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        const browseBtn = document.getElementById('browseBtn');
+        const confirmImport = document.getElementById('confirmImport');
+        const cancelImport = document.getElementById('cancelImport');
+        const autoRigBtn = document.getElementById('autoRigBtn');
+        const acceptRig = document.getElementById('acceptRig');
+        const modifyRig = document.getElementById('modifyRig');
+        const canvas = document.getElementById('characterCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // State variables
+        let characterImage = null;
+        let joints = [];
+        let bones = [];
+        let currentTool = 'select';
+        
+        // Event Listeners
+        browseBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = 'var(--accent)';
+        });
+        
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.style.borderColor = '#ccc';
+        });
+        
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.style.borderColor = '#ccc';
+            
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+        
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', () => {
+                importModal.classList.add('hidden');
+                analysisModal.classList.add('hidden');
+            });
+        });
+        
+        cancelImport.addEventListener('click', () => {
+            importModal.classList.add('hidden');
+        });
+        
+        confirmImport.addEventListener('click', () => {
+            // Simulate upload progress
+            const progressBar = document.getElementById('uploadProgress');
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    importModal.classList.add('hidden');
+                    drawCharacter();
+                } else {
+                    width += 5;
+                    progressBar.style.width = width + '%';
+                }
+            }, 50);
+        });
+        
+        autoRigBtn.addEventListener('click', () => {
+            if (characterImage) {
+                analysisModal.classList.remove('hidden');
+                // In a real app, this would run actual joint detection algorithms
+                simulateJointDetection();
+            } else {
+                alert('Please import a character image first.');
+            }
+        });
+        
+        acceptRig.addEventListener('click', () => {
+            analysisModal.classList.add('hidden');
+            createDefaultRig();
+            drawRiggedCharacter();
+        });
+        
+        modifyRig.addEventListener('click', () => {
+            document.querySelector('[data-tab="manual"]').click();
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Tab').classList.add('active');
+            });
+        });
+        
+        // Tool selection
+        document.querySelectorAll('.tool-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tool-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentTool = button.title.toLowerCase();
+            });
+        });
+        
+        // Functions
+        function handleFileSelect(file) {
+            if (file.type.match('image.*')) {
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    characterImage = new Image();
+                    characterImage.onload = () => {
+                        confirmImport.disabled = false;
+                        // Preview the image in analysis modal
+                        document.getElementById('analysisPreview').src = e.target.result;
+                    };
+                    characterImage.src = e.target.result;
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please select an image file.');
             }
         }
-    </script>
-
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-        import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
-
-        // --- CENA ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050505); // Quase preto total, igual ao vídeo
-        scene.fog = new THREE.Fog(0x050505, 5, 15);
-
-        const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 1.5, 6.5); // Posição frontal
         
-        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        document.body.appendChild(renderer.domElement);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.maxPolarAngle = Math.PI / 1.4; // Limita para não ver por baixo
-        controls.minDistance = 3;
-        controls.maxDistance = 10;
-
-        // --- ILUMINAÇÃO (Estilo Estúdio) ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambientLight);
-
-        const mainLight = new THREE.SpotLight(0xffffff, 20);
-        mainLight.position.set(2, 5, 4);
-        mainLight.angle = Math.PI / 6;
-        mainLight.penumbra = 0.5;
-        mainLight.castShadow = true;
-        mainLight.shadow.bias = -0.0001;
-        mainLight.shadow.mapSize.width = 2048;
-        mainLight.shadow.mapSize.height = 2048;
-        scene.add(mainLight);
-
-        const fillLight = new THREE.PointLight(0xccddff, 2);
-        fillLight.position.set(-3, 1, 2);
-        scene.add(fillLight);
-
-        // --- MATERIAIS ---
-        // Material de Neve (brancura fosca)
-        const snowMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff, 
-            roughness: 1, // Totalmente fosco como neve
-            metalness: 0.0
-        });
-
-        // Material de Galho (Madeira escura)
-        const branchMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x3d2817, 
-            roughness: 0.9 
-        });
-
-        // Carvão (Olhos/Botões) - Preto irregular
-        const coalMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x111111, 
-            roughness: 0.8 
-        });
-
-        // Cenoura
-        const carrotMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xff5500, 
-            roughness: 0.6 
-        });
-
-        // --- FUNÇÃO PARA CRIAR "BOLA DE NEVE" IMPERFEITA ---
-        function createSnowBall(radius) {
-            // Aumentei os segmentos para ter mais vértices para deformar
-            const geometry = new THREE.IcosahedronGeometry(radius, 12); 
-            const posAttribute = geometry.attributes.position;
+        function drawCharacter() {
+            if (characterImage) {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Calculate dimensions to maintain aspect ratio
+                const aspectRatio = characterImage.width / characterImage.height;
+                let drawWidth = canvas.width;
+                let drawHeight = canvas.height;
+                
+                if (aspectRatio > 1) {
+                    drawHeight = canvas.width / aspectRatio;
+                } else {
+                    drawWidth = canvas.height * aspectRatio;
+                }
+                
+                const x = (canvas.width - drawWidth) / 2;
+                const y = (canvas.height - drawHeight) / 2;
+                
+                // Draw the character
+                ctx.drawImage(characterImage, x, y, drawWidth, drawHeight);
+            }
+        }
+        
+        function simulateJointDetection() {
+            // In a real application, this would use computer vision to detect joints
+            // For this demo, we'll just simulate the process
+            console.log("Analyzing character for joint positions...");
+        }
+        
+        function createDefaultRig() {
+            // Create a simple default rig for demonstration
+            joints = [
+                { id: 1, x: 400, y: 100, name: 'Head' },
+                { id: 2, x: 400, y: 200, name: 'Neck' },
+                { id: 3, x: 350, y: 220, name: 'Left Shoulder' },
+                { id: 4, x: 450, y: 220, name: 'Right Shoulder' },
+                { id: 5, x: 320, y: 300, name: 'Left Elbow' },
+                { id: 6, x: 480, y: 300, name: 'Right Elbow' },
+                { id: 7, x: 300, y: 380, name: 'Left Hand' },
+                { id: 8, x: 500, y: 380, name: 'Right Hand' },
+                { id: 9, x: 400, y: 250, name: 'Spine' },
+                { id: 10, x: 380, y: 400, name: 'Left Hip' },
+                { id: 11, x: 420, y: 400, name: 'Right Hip' },
+                { id: 12, x: 360, y: 500, name: 'Left Knee' },
+                { id: 13, x: 440, y: 500, name: 'Right Knee' },
+                { id: 14, x: 340, y: 580, name: 'Left Foot' },
+                { id: 15, x: 460, y: 580, name: 'Right Foot' }
+            ];
+            
+            bones = [
+                { from: 1, to: 2, name: 'Neck' },
+                { from: 2, to: 3, name: 'Left Collar' },
+                { from: 2, to: 4, name: 'Right Collar' },
+                { from: 3, to: 5, name: 'Left Upper Arm' },
+                { from: 4, to: 6, name: 'Right Upper Arm' },
+                { from: 5, to: 7, name: 'Left Lower Arm' },
+                { from: 6, to: 8, name: 'Right Lower Arm' },
+                { from: 2, to: 9, name: 'Upper Spine' },
+                { from: 9, to: 10, name: 'Left Hip Connector' },
+                { from: 9, to: 11, name: 'Right Hip Connector' },
+                { from: 10, to: 12, name: 'Left Upper Leg' },
+                { from: 11, to: 13, name: 'Right Upper Leg' },
+                { from: 12, to: 14, name: 'Left Lower Leg' },
+                { from: 13, to: 15, name: 'Right Lower Leg' }
+            ];
+        }
+        
+        function drawRiggedCharacter() {
+            drawCharacter();
+            
+            // Draw bones
+            bones.forEach(bone => {
+                const fromJoint = joints.find(j => j.id === bone.from);
+                const toJoint = joints.find(j => j.id === bone.to);
+                
+                if (fromJoint && toJoint) {
+                    ctx.beginPath();
+                    ctx.moveTo(fromJoint.x, fromJoint.y);
+                    ctx.lineTo(toJoint.x, toJoint.y);
+                    ctx.strokeStyle = 'rgba(79, 195, 161, 0.7)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                    
+                    // Draw bone name
+                    const midX = (fromJoint.x + toJoint.x) / 2;
+                    const midY = (fromJoint.y + toJoint.y) / 2;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(bone.name, midX, midY);
+                }
+            });
+            
+            // Draw joints
+            joints.forEach(joint => {
+                ctx.beginPath();
+                ctx.arc(joint.x, joint.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'var(--accent)';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Draw joint name
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.font = '10px Arial';
+                ctx.fillText(joint.name, joint.x + 8, joint.y - 8);
+            });
+        }
+        
+        // Initialize
+        drawCharacter();
+    </script>
+</body>
+</html>
