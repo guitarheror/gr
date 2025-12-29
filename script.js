@@ -40,107 +40,194 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CORE: ATUALIZAÇÃO VISUAL ---
     function updateTransform() {
-        workspaceContainer.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        // Decide qual container mover baseada em onde estamos
+        let targetContainer;
+        
+        if (splitViewActive) {
+            targetContainer = document.getElementById('nested-workspace-container');
+        } else {
+            targetContainer = workspaceContainer;
+        }
+
+        if (targetContainer) {
+            targetContainer.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+            
+            // Salva o estado no objeto atual para não perder ao navegar
+            allElements[currentParentId].panX = pannedX;
+            allElements[currentParentId].panY = pannedY;
+            allElements[currentParentId].zoom = scale;
+        }
     }
+
+    // --- EVENTOS DO MOUSE (Modificados para suportar Nested) ---
+    
+    // Zoom (Wheel)
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        // Se estivermos na Split View, queremos dar zoom SÓ se o mouse estiver na direita
+        if (splitViewActive) {
+            const editorPane = document.getElementById('editor-pane');
+            // Se o mouse estiver sobre o editor, não dê zoom no workspace
+            if (e.clientX < editorPane.getBoundingClientRect().width) return;
+        }
+
+        const delta = -Math.sign(e.deltaY); 
+        const zoomFactor = 1 + (delta * ZOOM_SPEED);
+        let newScale = scale * zoomFactor;
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        
+        // Nota: O cálculo de zoom relativo ao mouse precisa considerar offset se estiver aninhado
+        // Para simplificar na v2.4, vamos manter o zoom centralizado no container atual
+        // Ajuste fino de matemática fica para v2.5 se precisar.
+        
+        const workspaceMouseX = (mouseX - pannedX) / scale;
+        const workspaceMouseY = (mouseY - pannedY) / scale;
+
+        scale = newScale;
+        pannedX = mouseX - (workspaceMouseX * scale);
+        pannedY = mouseY - (workspaceMouseY * scale);
+
+        updateTransform();
+    }, { passive: false });
+
+    // Mover Workspace (Rodinha)
+    viewport.addEventListener('mousedown', (e) => {
+        // ... (códigos de fechar menus mantidos) ...
+        
+        if (e.button === 1) { // Rodinha
+            // Se split view ativa, verificar se clicou na direita
+            if (splitViewActive) {
+                const editorPane = document.getElementById('editor-pane');
+                if (e.clientX < editorPane.getBoundingClientRect().width) return;
+            }
+
+            if(!e.target.closest('.workspace-element') && !e.target.closest('.ui-element')) {
+                isDraggingWorkspace = true;
+                startDragX = e.clientX - pannedX;
+                startDragY = e.clientY - pannedY;
+                viewport.style.cursor = 'grabbing';
+            }
+        }
+    });
 
     // Variável para guardar referência do container Split (se existir)
     let splitViewActive = false;
 
     function renderElements() {
-        // Limpa tudo primeiro
         elementsLayer.innerHTML = '';
-        const viewport = document.getElementById('viewport');
         
         // Remove Split View antiga se existir
         const existingSplit = document.getElementById('split-view-container');
         if (existingSplit) existingSplit.remove();
-        splitViewActive = false;
-
-        // Pega dados da pasta atual
+        
         const currentData = allElements[currentParentId];
 
-        // --- MODO SPLIT VIEW (Se estamos DENTRO de um Texto) ---
         if (currentData.type === 'text') {
             splitViewActive = true;
             renderSplitView(currentData);
         } else {
-            // --- MODO WORKSPACE PADRÃO (Root ou Pastas Normais) ---
-            // Mostra o container normal do workspace
-            workspaceContainer.style.display = 'block'; 
+            splitViewActive = false;
+            workspaceContainer.style.display = 'block'; // Garante que volta a aparecer
             
             currentData.children.forEach(childId => {
                 if(allElements[childId]) {
-                    createElementDOM(allElements[childId]);
+                    createElementDOM(allElements[childId], elementsLayer);
                 }
             });
         }
-        
         updateBreadcrumbsUI();
     }
 
-    // --- NOVA FUNÇÃO: RENDERIZAR SPLIT VIEW ---
-    // Adicione esta função logo abaixo de renderElements
+    // --- FUNÇÃO: RENDERIZAR SPLIT VIEW (v2.4 - Funcional) ---
     function renderSplitView(data) {
-        // Esconde o container principal de fundo (o grid da raiz)
-        // workspaceContainer.style.display = 'none'; 
-        // OBS: Na verdade, precisamos esconder o elementsLayer da raiz, 
-        // mas vamos criar uma sobreposição.
-        
+        // Esconde o grid principal para não confundir (opcional, mas bom pra performance)
+        workspaceContainer.style.display = 'none';
+
         const splitContainer = document.createElement('div');
         splitContainer.id = 'split-view-container';
         
-        // HTML da Estrutura Split
         splitContainer.innerHTML = `
             <div id="editor-pane">
                 <div class="editor-toolbar">
-                    <button class="editor-tool-btn" title="Bold"><b>B</b></button>
-                    <button class="editor-tool-btn" title="Italic"><i>I</i></button>
-                    <button class="editor-tool-btn" title="List">☰</button>
+                    <button class="editor-tool-btn" data-cmd="bold" title="Bold"><b>B</b></button>
+                    <button class="editor-tool-btn" data-cmd="insertUnorderedList" title="List">☰</button>
                 </div>
                 <input type="text" id="editor-title-input" value="${data.name}" placeholder="Untitled">
                 <div id="editor-content-input" contenteditable="true">${data.content}</div>
             </div>
             <div id="split-divider"></div>
             <div id="nested-workspace-pane">
-                <div id="nested-grid-background" style="position: absolute; top: -5000px; left: -5000px; width: 10000px; height: 10000px; background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px; pointer-events: none;"></div>
-                <div id="nested-elements-layer"></div>
+                <div id="nested-workspace-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0;">
+                    <div style="position: absolute; top: -5000px; left: -5000px; width: 10000px; height: 10000px; background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px; pointer-events: none;"></div>
+                    <div id="nested-elements-layer"></div>
+                </div>
             </div>
         `;
         
         document.getElementById('viewport').appendChild(splitContainer);
 
-        // --- Lógica do Editor (Esquerda) ---
+        // --- 1. Lógica do Editor (Toolbar) ---
+        const toolbarBtns = splitContainer.querySelectorAll('.editor-tool-btn');
+        toolbarBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault(); // Impede perder o foco
+                const cmd = btn.dataset.cmd;
+                document.execCommand(cmd, false, null);
+                
+                // Toggle visual simples
+                // (Para um estado real seria ideal verificar document.queryCommandState, 
+                // mas para este protótipo, toggle funciona bem)
+                btn.classList.toggle('active');
+            });
+        });
+
         const titleInput = splitContainer.querySelector('#editor-title-input');
         const contentInput = splitContainer.querySelector('#editor-content-input');
 
-        // Salvar alterações automaticamente
         titleInput.addEventListener('input', () => { data.name = titleInput.value; });
-        contentInput.addEventListener('input', () => { data.content = contentInput.innerText; });
+        contentInput.addEventListener('input', () => { data.content = contentInput.innerHTML; }); // innerHTML para salvar o HTML (bold/listas)
 
-        // --- Lógica do Workspace (Direita) ---
-        const nestedLayer = splitContainer.querySelector('#nested-elements-layer');
-        const nestedPane = splitContainer.querySelector('#nested-workspace-pane');
+        // --- 2. Renderizar Elementos no Workspace da Direita ---
+        // Aqui está o segredo: Chamamos o render dos filhos apontando para o layer novo
+        const nestedElementsLayer = document.getElementById('nested-elements-layer');
         
-        // Renderizar os filhos (elementos dentro do lado direito)
         data.children.forEach(childId => {
-            // Nota: Precisamos de uma versão modificada de createElementDOM que 
-            // anexe ao nestedLayer, não ao elementsLayer global.
-            // Para simplificar agora, vamos usar um hack rápido:
-            const tempLayer = elementsLayer; // Salva ref
-            // (Isso exigiria refatorar createElementDOM para aceitar um container alvo. 
-            // Por enquanto, na v2.3, vamos deixar o lado direito vazio visualmente 
-            // mas funcional para navegação, para não complicar demais o código de uma vez).
+            if(allElements[childId]) {
+                // Passamos o container alvo para a função de criação
+                createElementDOM(allElements[childId], nestedElementsLayer);
+            }
         });
 
-        // --- Lógica do Divisor (Resizer do Split) ---
+        // Aplica o Transform inicial do workspace aninhado
+        const nestedContainer = document.getElementById('nested-workspace-container');
+        if(nestedContainer) {
+             // Usa os dados salvos ou reseta se for a primeira vez
+            const currentZoom = data.zoom || 1;
+            const currentPanX = data.panX || 0;
+            const currentPanY = data.panY || 0;
+            nestedContainer.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
+        }
+
+
+        // --- 3. Lógica do Divisor (Limites 25%) ---
         const divider = splitContainer.querySelector('#split-divider');
         const editorPane = splitContainer.querySelector('#editor-pane');
         
         divider.addEventListener('mousedown', (e) => {
             e.preventDefault();
             function onMouseMove(moveEvent) {
-                const newWidth = (moveEvent.clientX / window.innerWidth) * 100;
-                editorPane.style.width = newWidth + '%';
+                // Calcula porcentagem
+                let newWidthPercent = (moveEvent.clientX / window.innerWidth) * 100;
+                
+                // LIMITES (v2.4)
+                if (newWidthPercent < 25) newWidthPercent = 25;
+                if (newWidthPercent > 75) newWidthPercent = 75;
+                
+                editorPane.style.width = newWidthPercent + '%';
             }
             function onMouseUp() {
                 window.removeEventListener('mousemove', onMouseMove);
@@ -149,13 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('mouseup', onMouseUp);
         });
-
-        // NOTA: Para o Pan/Zoom funcionar APENAS no lado direito,
-        // precisaríamos mudar os event listeners globais para ouvirem 'nestedPane' 
-        // quando splitViewActive for true. Isso faremos na v2.4.
     }
 
-    function createElementDOM(data) {
+    function createElementDOM(data, targetLayer = elementsLayer) { // Valor padrão é o layer principal
         const div = document.createElement('div');
         div.classList.add('workspace-element');
         div.id = data.id;
@@ -220,25 +303,27 @@ document.addEventListener('DOMContentLoaded', () => {
             showContextMenu(e.clientX, e.clientY);
         });
 
-        elementsLayer.appendChild(div);
+        targetLayer.appendChild(div);
     }
 
-    // Função auxiliar de Resize (Adicione logo abaixo de createElementDOM)
+    // Função auxiliar de Resize (v2.4 - Com Limites)
     function initResize(e, id) {
         e.stopPropagation();
         const elem = allElements[id];
         const startX = e.clientX;
         const startY = e.clientY;
-        const startW = elem.width;
-        const startH = elem.height;
+        const startW = elem.width || 250; // Fallback se não tiver width
+        const startH = elem.height || 180;
 
         function onMouseMove(moveEvent) {
             const newW = startW + (moveEvent.clientX - startX) / scale;
             const newH = startH + (moveEvent.clientY - startY) / scale;
             
-            // Atualiza dados
-            elem.width = Math.max(100, newW); // Mínimo de 100px
-            elem.height = Math.max(80, newH);
+            // LIMITES (v2.4)
+            // Largura mínima: 200px
+            // Altura mínima: 100px (para garantir título visível)
+            elem.width = Math.max(200, newW); 
+            elem.height = Math.max(100, newH);
 
             // Atualiza visual
             const div = document.getElementById(id);
@@ -256,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('mousemove', onMouseMove);
         window.addEventListener('mouseup', onMouseUp);
     }
-
     // --- CRIAÇÃO DE NOVOS ELEMENTOS (Atualizado v2.3) ---
     if(btnAddText) {
         btnAddText.addEventListener('click', () => {
@@ -475,4 +559,5 @@ document.addEventListener('DOMContentLoaded', () => {
     renderElements();
     updateTransform();
 });
+
 
