@@ -1,220 +1,107 @@
 /* Reset básico */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000000; font-family: sans-serif; }
 
-body, html {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: #000000;
-    font-family: sans-serif;
-}
-
-#viewport {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
+/* Viewport Global */
+#viewport { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
 /* --- Workspace Infinito --- */
 #workspace-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     transform-origin: 0 0;
+    z-index: 0; /* Fica no fundo */
 }
 
 #grid-background {
     position: absolute;
-    top: -5000px;
-    left: -5000px;
-    width: 10000px;
-    height: 10000px;
+    top: -10000px; left: -10000px; width: 20000px; height: 20000px;
     background-image: radial-gradient(#333333 1px, transparent 1px);
     background-size: 20px 20px;
     pointer-events: none;
 }
 
-
-/* --- Elementos UI --- */
-.ui-element {
-    position: absolute;
-    z-index: 1000;
-}
-
-/* Topo Esquerdo */
-.top-left-breadcrumbs {
-    top: 20px;
-    left: 20px;
-    background-color: #000;
-    padding: 8px 16px;
-    border-radius: 20px;
-    color: white;
-    border: 1px solid #333;
-    display: flex;
-    align-items: center;
-}
-
-.breadcrumb-icon {
-    color: #4CAF50;
-    margin-right: 8px;
-    font-size: 20px !important;
-}
-
-.breadcrumb-text {
-    font-size: 14px;
-    font-weight: 500;
-}
-
-/* Topo Direito */
-.top-right-settings {
-    top: 20px;
-    right: 20px;
-    background-color: #000;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 1px solid #333;
-    color: #999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.settings-icon {
-    font-size: 20px !important;
-}
-
-/* Inferior Esquerdo (Botão +) */
-.bottom-left-add {
-    bottom: 20px;
-    left: 20px;
-    background-color: #4CAF50;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    color: black;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    transition: transform 0.2s, background-color 0.2s;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1002; /* Fica acima do menu */
-}
-
-.bottom-left-add:active {
-    transform: scale(0.95);
-}
-
-.add-icon {
-    font-size: 32px !important;
-    font-weight: bold;
-    transition: transform 0.3s ease; /* Animação suave ao girar */
-}
-
-/* ... (Mantenha todo o CSS anterior até a parte do Menu Adicionar) ... */
-/* Copie tudo do CSS anterior e adicione/substitua o seguinte no final: */
-
-/* --- Reset e Base (MANTIDOS) --- */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000000; font-family: sans-serif; }
-#viewport { position: relative; width: 100%; height: 100%; overflow: hidden; }
-#workspace-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0; }
-#grid-background { position: absolute; top: -5000px; left: -5000px; width: 10000px; height: 10000px; background-image: radial-gradient(#333333 1px, transparent 1px); background-size: 20px 20px; pointer-events: none; }
-
-/* --- UI Elements (MANTIDOS) --- */
-.ui-element { position: absolute; z-index: 1000; }
-.top-left-breadcrumbs { top: 20px; left: 20px; background-color: #000; padding: 8px 16px; border-radius: 20px; color: white; border: 1px solid #333; display: flex; align-items: center; cursor: pointer; } /* Adicionei cursor pointer */
-.breadcrumb-icon { color: #4CAF50; margin-right: 8px; font-size: 20px !important; }
-.breadcrumb-text { font-size: 14px; font-weight: 500; }
-.top-right-settings { top: 20px; right: 20px; background-color: #000; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #333; color: #999; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.settings-icon { font-size: 20px !important; }
-.bottom-left-add { bottom: 20px; left: 20px; background-color: #4CAF50; width: 56px; height: 56px; border-radius: 50%; border: none; color: black; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.2s; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1002; }
-.bottom-left-add:active { transform: scale(0.95); }
-.add-icon { font-size: 32px !important; font-weight: bold; }
-
-/* --- MENU ADICIONAR (MANTIDO) --- */
-#add-menu { bottom: 90px; left: 20px; width: 200px; background-color: #050505; border: 1px solid #333; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); opacity: 1; visibility: visible; transition: opacity 0.2s ease, visibility 0.2s; }
-#add-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.menu-header { color: #666; font-size: 10px; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
-.menu-item { display: flex; align-items: center; cursor: pointer; transition: opacity 0.2s; }
-.menu-item:hover { opacity: 0.8; }
-.menu-icon { color: #4CAF50; font-size: 20px !important; margin-right: 12px; }
-.menu-text { color: #4CAF50; font-size: 14px; font-weight: 500; }
-
-/* --- ELEMENTOS DO WORKSPACE (v2.0) --- */
+/* Camada de Elementos */
 #elements-layer {
     position: absolute;
     top: 0; left: 0; width: 0; height: 0;
 }
 
+/* --- Elemento Genérico do Workspace --- */
 .workspace-element {
     position: absolute;
-    min-width: 150px;
-    min-height: 80px;
+    min-width: 150px; min-height: 80px;
     background-color: #0a0a0a;
     border: 1px solid #333;
     border-radius: 8px;
     color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none; /* Impede seleção de texto ao arrastar */
+    display: flex; align-items: center; justify-content: center;
+    user-select: none;
     cursor: grab;
     transition: box-shadow 0.2s, border-color 0.2s;
+    z-index: 10;
 }
 
-.workspace-element:hover {
-    border-color: #4CAF50;
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
-}
+.workspace-element:hover { border-color: #4CAF50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.2); }
+.workspace-element:active { cursor: grabbing; }
+.element-text-content { font-size: 16px; font-family: monospace; pointer-events: none; }
 
-.workspace-element:active {
-    cursor: grabbing;
-}
+/* --- INTERFACE (UI) - Z-Index Alto para garantir clique --- */
+.ui-element { position: absolute; z-index: 9999; }
 
-/* Estilo específico para Texto (simples por enquanto) */
-.element-text-content {
-    font-size: 16px;
-    font-family: monospace;
-    pointer-events: none; /* O clique passa para o container pai */
+/* Breadcrumbs */
+.top-left-breadcrumbs {
+    top: 20px; left: 20px;
+    background-color: #000;
+    padding: 8px 16px; border-radius: 20px; border: 1px solid #333;
+    color: white; display: flex; align-items: center; cursor: default;
 }
+.breadcrumb-icon { color: #4CAF50; margin-right: 8px; font-size: 20px !important; }
+.breadcrumb-text { font-size: 14px; font-weight: 500; }
+.breadcrumb-text span { cursor: pointer; }
+.breadcrumb-text span:hover { text-decoration: underline; color: #4CAF50; }
 
-/* --- MENU DE CONTEXTO (v2.0) --- */
+/* Configurações */
+.top-right-settings {
+    top: 20px; right: 20px;
+    background-color: #000; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid #333; color: #999;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.settings-icon { font-size: 20px !important; }
+
+/* Botão Adicionar (+) */
+.bottom-left-add {
+    bottom: 20px; left: 20px;
+    background-color: #4CAF50; width: 56px; height: 56px; border-radius: 50%;
+    border: none; color: black; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: transform 0.2s;
+}
+.bottom-left-add:active { transform: scale(0.95); }
+.add-icon { font-size: 32px !important; font-weight: bold; }
+
+/* Menu Adicionar */
+#add-menu {
+    bottom: 90px; left: 20px; width: 200px;
+    background-color: #050505; border: 1px solid #333; border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    opacity: 1; visibility: visible; transition: opacity 0.2s, visibility 0.2s;
+}
+#add-menu.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.menu-header { color: #666; font-size: 10px; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
+.menu-item { display: flex; align-items: center; cursor: pointer; opacity: 0.8; }
+.menu-item:hover { opacity: 1; }
+.menu-icon { color: #4CAF50; font-size: 20px !important; margin-right: 12px; }
+.menu-text { color: #4CAF50; font-size: 14px; font-weight: 500; }
+
+/* Menu de Contexto */
 #context-menu {
-    background-color: #1a1a1a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 6px 0;
-    width: 120px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    /* A posição top/left será definida pelo JS */
+    background-color: #1a1a1a; border: 1px solid #444; border-radius: 6px;
+    padding: 6px 0; width: 140px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
-
-#context-menu.hidden {
-    display: none;
-}
-
-.context-item {
-    padding: 8px 16px;
-    font-size: 13px;
-    color: white;
-    cursor: pointer;
-}
-
-.context-item:hover {
-    background-color: #333;
-}
-
-.context-item.delete {
-    color: #ff5555;
-}
+#context-menu.hidden { display: none; }
+.context-item { padding: 8px 16px; font-size: 13px; color: white; cursor: pointer; }
+.context-item:hover { background-color: #333; }
+.context-item.delete { color: #ff5555; }
