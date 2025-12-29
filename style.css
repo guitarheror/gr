@@ -193,3 +193,24 @@ body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000
     position: relative;
     overflow: hidden;
 }
+
+/* Estado ativo dos botões do editor */
+.editor-tool-btn.active {
+    color: #4CAF50;
+    background-color: rgba(76, 175, 80, 0.1);
+    border-radius: 4px;
+}
+
+/* Garante que o container aninhado capture os eventos do mouse corretamente */
+#nested-workspace-pane {
+    position: relative;
+    overflow: hidden;
+    background-color: #000; /* Garante fundo para o clique */
+}
+
+/* Ajuste no container de elementos dentro do split view */
+#nested-elements-layer {
+    position: absolute;
+    top: 0; left: 0; width: 0; height: 0;
+    z-index: 10;
+}
