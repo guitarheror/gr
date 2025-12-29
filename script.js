@@ -5,6 +5,284 @@ document.addEventListener('DOMContentLoaded', () => {
     const elementsLayer = document.getElementById('elements-layer');
     const breadcrumbText = document.getElementById('breadcrumb-text');
 
+    // --- LÓGICA DO MINI MAPA (GRAPH VIEW v3.0) ---
+    
+    const minimapCanvas = document.getElementById('minimap-canvas');
+    const ctx = minimapCanvas.getContext('2d');
+    const connectionModal = document.getElementById('connection-modal');
+    const connectList = document.getElementById('connect-list');
+    const connectSearch = document.getElementById('connect-search');
+    const btnCancelConnect = document.getElementById('btn-cancel-connect');
+    const btnCtxConnect = document.getElementById('ctx-connect');
+
+    let graphNodes = [];
+    let graphLinks = [];
+    let animationFrameId;
+
+    // Configuração do Canvas
+    function resizeCanvas() {
+        minimapCanvas.width = minimapCanvas.parentElement.offsetWidth;
+        minimapCanvas.height = minimapCanvas.parentElement.offsetHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Chama uma vez pra iniciar
+
+    // 1. CONSTRUIR O GRAFO (Transformar árvore em nós e links)
+    function buildGraphData() {
+        graphNodes = [];
+        graphLinks = [];
+
+        // Função recursiva para pegar todos os elementos
+        function traverse(elementId, parentId = null) {
+            const el = allElements[elementId];
+            if (!el) return;
+
+            // Cria o NÓ
+            // Se ele já existe na simulação anterior, tentamos manter a posição (x, y) pra não pular
+            // Se não, posição aleatória no meio
+            let existingNode = graphNodes.find(n => n.id === el.id);
+            
+            graphNodes.push({
+                id: el.id,
+                name: el.name,
+                // Mantém posição ou randomiza no centro
+                x: existingNode ? existingNode.x : minimapCanvas.width / 2 + (Math.random() - 0.5) * 50,
+                y: existingNode ? existingNode.y : minimapCanvas.height / 2 + (Math.random() - 0.5) * 50,
+                vx: 0, vy: 0 // Velocidade
+            });
+
+            // Cria o LINK IMPLÍCITO (Pai -> Filho)
+            if (parentId) {
+                graphLinks.push({ source: parentId, target: el.id, type: 'hierarchy' });
+            }
+
+            // Cria LINKS EXPLÍCITOS (Conexões manuais)
+            if (el.connections) {
+                el.connections.forEach(targetId => {
+                    // Evita duplicatas se A conecta B e B conecta A
+                    const exists = graphLinks.find(l => 
+                        (l.source === el.id && l.target === targetId) || 
+                        (l.source === targetId && l.target === el.id)
+                    );
+                    if (!exists && allElements[targetId]) {
+                        graphLinks.push({ source: el.id, target: targetId, type: 'manual' });
+                    }
+                });
+            }
+
+            // Recursão nos filhos
+            if (el.children) {
+                el.children.forEach(childId => traverse(childId, el.id));
+            }
+        }
+
+        traverse('root');
+    }
+
+    // 2. SIMULAÇÃO FÍSICA (Force Layout Simples)
+    function updatePhysics() {
+        // Constantes da física
+        const REPULSION = 500;
+        const ATTRACTION = 0.05;
+        const CENTER_GRAVITY = 0.02;
+        const DAMPING = 0.9; // Atrito
+
+        // A. Repulsão (Todos se empurram)
+        for (let i = 0; i < graphNodes.length; i++) {
+            for (let j = i + 1; j < graphNodes.length; j++) {
+                const nodeA = graphNodes[i];
+                const nodeB = graphNodes[j];
+                
+                const dx = nodeB.x - nodeA.x;
+                const dy = nodeB.y - nodeA.y;
+                const dist = Math.sqrt(dx*dx + dy*dy) || 1; // Evita divisão por zero
+                
+                if (dist < 150) { // Só calcula se estiverem perto
+                    const force = REPULSION / (dist * dist);
+                    const fx = (dx / dist) * force;
+                    const fy = (dy / dist) * force;
+
+                    nodeA.vx -= fx;
+                    nodeA.vy -= fy;
+                    nodeB.vx += fx;
+                    nodeB.vy += fy;
+                }
+            }
+        }
+
+        // B. Atração (Conectados se puxam)
+        graphLinks.forEach(link => {
+            const nodeA = graphNodes.find(n => n.id === link.source);
+            const nodeB = graphNodes.find(n => n.id === link.target);
+            if (!nodeA || !nodeB) return;
+
+            const dx = nodeB.x - nodeA.x;
+            const dy = nodeB.y - nodeA.y;
+            
+            nodeA.vx += dx * ATTRACTION;
+            nodeA.vy += dy * ATTRACTION;
+            nodeB.vx -= dx * ATTRACTION;
+            nodeB.vy -= dy * ATTRACTION;
+        });
+
+        // C. Gravidade Central e Atualização
+        const centerX = minimapCanvas.width / 2;
+        const centerY = minimapCanvas.height / 2;
+
+        graphNodes.forEach(node => {
+            // Puxa pro centro pra não sumir da tela
+            node.vx += (centerX - node.x) * CENTER_GRAVITY;
+            node.vy += (centerY - node.y) * CENTER_GRAVITY;
+
+            // Aplica velocidade
+            node.vx *= DAMPING;
+            node.vy *= DAMPING;
+            node.x += node.vx;
+            node.y += node.vy;
+        });
+    }
+
+    // 3. DESENHAR (Render Loop)
+    function draw() {
+        ctx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+        
+        updatePhysics(); // Atualiza posições
+
+        // Desenha Links
+        ctx.lineWidth = 1;
+        graphLinks.forEach(link => {
+            const nodeA = graphNodes.find(n => n.id === link.source);
+            const nodeB = graphNodes.find(n => n.id === link.target);
+            if (!nodeA || !nodeB) return;
+
+            ctx.beginPath();
+            ctx.moveTo(nodeA.x, nodeA.y);
+            ctx.lineTo(nodeB.x, nodeB.y);
+            // Linha Verde para conexões manuais, Cinza para hierarquia
+            ctx.strokeStyle = link.type === 'manual' ? '#4CAF50' : '#444';
+            ctx.stroke();
+        });
+
+        // Desenha Nós
+        graphNodes.forEach(node => {
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 4, 0, Math.PI * 2);
+            
+            // Cor: Verde se for o atual, branco outros
+            if (node.id === currentParentId) {
+                ctx.fillStyle = '#4CAF50';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#4CAF50';
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 0;
+            }
+            
+            ctx.fill();
+        });
+
+        animationFrameId = requestAnimationFrame(draw);
+    }
+
+    // Inicia o Loop
+    // buildGraphData(); // Será chamado quando criarmos elementos
+    // draw();
+
+    // Hook para atualizar o grafo sempre que algo mudar (RenderElements é o lugar ideal)
+    const originalRenderElements = renderElements;
+    renderElements = function() { // Sobrescrevemos para injetar a atualização
+        originalRenderElements();
+        buildGraphData();
+    };
+    draw(); // Inicia o loop visual
+
+
+    // --- 4. INTERAÇÃO COM O MAPA (Clicar na bolinha) ---
+    minimapCanvas.addEventListener('mousedown', (e) => {
+        const rect = minimapCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Detecta clique no nó
+        const clickedNode = graphNodes.find(node => {
+            const dist = Math.hypot(node.x - x, node.y - y);
+            return dist < 10; // Raio de clique
+        });
+
+        if (clickedNode) {
+            enterElement(clickedNode.id);
+        }
+    });
+
+
+    // --- 5. SISTEMA DE CONEXÃO MANUAL (Modal) ---
+    
+    // Abrir modal ao clicar em "Connect" no menu de contexto
+    if (btnCtxConnect) {
+        btnCtxConnect.addEventListener('click', () => {
+            closeContextMenu(); // Fecha o menu direito
+            if (!contextTargetId) return; // Precisa ter clicado em alguém
+
+            // Prepara a lista
+            openConnectionModal();
+        });
+    }
+
+    function openConnectionModal() {
+        connectionModal.classList.remove('hidden');
+        connectSearch.value = '';
+        renderConnectList();
+    }
+
+    function renderConnectList(filterText = '') {
+        connectList.innerHTML = '';
+        
+        // Lista plana de todos os elementos (exceto o próprio e Root)
+        const flatList = [];
+        function getFlatList(currId) {
+            const el = allElements[currId];
+            if (el.id !== 'root' && el.id !== contextTargetId) {
+                flatList.push(el);
+            }
+            if(el.children) el.children.forEach(c => getFlatList(c));
+        }
+        getFlatList('root');
+
+        // Filtra e renderiza
+        const filtered = flatList.filter(el => el.name.toLowerCase().includes(filterText.toLowerCase()));
+
+        filtered.forEach(el => {
+            const div = document.createElement('div');
+            div.className = 'connect-option';
+            div.innerText = el.name; // Mostra o nome
+            div.onclick = () => {
+                // CRIAR CONEXÃO
+                const origin = allElements[contextTargetId];
+                if (!origin.connections) origin.connections = [];
+                
+                // Evita duplicata
+                if (!origin.connections.includes(el.id)) {
+                    origin.connections.push(el.id);
+                }
+                
+                // Fecha e Atualiza
+                connectionModal.classList.add('hidden');
+                buildGraphData(); // Atualiza o visual do mapa
+            };
+            connectList.appendChild(div);
+        });
+    }
+
+    // Busca no modal
+    connectSearch.addEventListener('input', (e) => {
+        renderConnectList(e.target.value);
+    });
+
+    // Cancelar modal
+    btnCancelConnect.addEventListener('click', () => {
+        connectionModal.classList.add('hidden');
+    });
+    
     // UI Menus
     const addButton = document.getElementById('add-button');
     const addMenu = document.getElementById('add-menu');
@@ -348,13 +626,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const newElement = {
                 id: newId,
                 type: 'text',
-                name: 'Untitled Section', // Título padrão
-                content: 'Start typing your content here...', // Texto padrão
-                x: (window.innerWidth / 2 - pannedX) / scale - 100, // Ajustado
+                name: 'Untitled Section',
+                content: 'Start typing your content here...',
+                x: (window.innerWidth / 2 - pannedX) / scale - 100,
                 y: (window.innerHeight / 2 - pannedY) / scale - 75,
-                width: 250,  // Largura inicial
-                height: 180, // Altura inicial
-                children: [] // O workspace da direita
+                width: 250,
+                height: 180,
+                children: [],
+                connections: [] // <--- ADICIONE ISSO NA v3.0
             };
 
             allElements[newId] = newElement;
@@ -559,5 +838,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderElements();
     updateTransform();
 });
+
 
 
