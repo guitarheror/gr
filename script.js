@@ -26,28 +26,21 @@ function updateTransform() {
 
 // --- LÓGICA DO MENU DE ADICIONAR (v1.1) ---
 addButton.addEventListener('click', (e) => {
-    e.stopPropagation(); // Impede que o clique passe para o viewport (arrastar)
+    e.stopPropagation(); // Impede que o clique passe para o viewport
     
-    // Toggle (Alternar) a visibilidade
     const isHidden = addMenu.classList.contains('hidden');
     
     if (isHidden) {
-        // ABRIR MENU
         addMenu.classList.remove('hidden');
-        addIconSymbol.textContent = 'close'; // Muda ícone para X
-        // Opcional: Efeito de rotação se quiser:
-        // addIconSymbol.style.transform = 'rotate(90deg)';
+        addIconSymbol.textContent = 'close'; 
     } else {
-        // FECHAR MENU
         addMenu.classList.add('hidden');
-        addIconSymbol.textContent = 'add'; // Muda ícone para +
-        // addIconSymbol.style.transform = 'rotate(0deg)';
+        addIconSymbol.textContent = 'add'; 
     }
 });
 
-// Fechar o menu se clicar fora dele (no workspace)
+// Fechar o menu se clicar fora dele
 viewport.addEventListener('mousedown', (e) => {
-    // Se o menu está aberto E o clique não foi no menu nem no botão
     if (!addMenu.classList.contains('hidden') && 
         !e.target.closest('#add-menu') && 
         !e.target.closest('#add-button')) {
@@ -56,8 +49,15 @@ viewport.addEventListener('mousedown', (e) => {
         addIconSymbol.textContent = 'add';
     }
     
-    // Lógica de Arrastar (Mantida da v1.0)
-    if (e.button === 0 && !e.target.closest('.ui-element')) {
+    // --- LÓGICA DE ARRASTAR (PANNING) ATUALIZADA (v1.2) ---
+    // Verifica se é Botão Esquerdo (0) OU Botão do Meio/Rodinha (1)
+    if ((e.button === 0 || e.button === 1) && !e.target.closest('.ui-element')) {
+        
+        // Se for o botão do meio, previne o comportamento padrão (aquele ícone de scroll do navegador)
+        if (e.button === 1) {
+            e.preventDefault(); 
+        }
+
         isDragging = true;
         startDragX = e.clientX - pannedX;
         startDragY = e.clientY - pannedY;
@@ -65,10 +65,13 @@ viewport.addEventListener('mousedown', (e) => {
     }
 });
 
-// --- Restante da lógica de Navegação (v1.0) ---
+// --- Restante da lógica de Navegação ---
 
 window.addEventListener('mousemove', (e) => {
     if (isDragging) {
+        // Previne seleção de texto indesejada enquanto arrasta
+        e.preventDefault();
+        
         pannedX = e.clientX - startDragX;
         pannedY = e.clientY - startDragY;
         updateTransform();
@@ -103,6 +106,7 @@ viewport.addEventListener('wheel', (e) => {
 
 viewport.addEventListener('contextmenu', (e) => {
     e.preventDefault();
+    // Futuramente menu de contexto aqui
 });
 
 // Inicializa
