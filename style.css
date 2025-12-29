@@ -214,3 +214,96 @@ body, html { width: 100%; height: 100%; overflow: hidden; background-color: #000
     top: 0; left: 0; width: 0; height: 0;
     z-index: 10;
 }
+
+/* --- MINI MAPA (Graph View) --- */
+#mini-map {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 250px;
+    height: 200px;
+    background-color: rgba(10, 10, 10, 0.9);
+    border: 1px solid #333;
+    border-radius: 12px;
+    z-index: 10000; /* Acima de tudo */
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: width 0.3s, height 0.3s;
+}
+
+/* Efeito de hover: expande levemente para ver melhor */
+#mini-map:hover {
+    width: 300px;
+    height: 250px;
+    border-color: #4CAF50;
+}
+
+#minimap-canvas {
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+}
+
+.minimap-label {
+    position: absolute;
+    bottom: 8px; right: 12px;
+    font-size: 10px; color: #666;
+    pointer-events: none;
+    font-family: monospace;
+}
+
+/* --- MODAL DE CONEXÃO --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.8);
+    z-index: 20000;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background-color: #111;
+    border: 1px solid #333;
+    border-radius: 12px;
+    width: 350px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; gap: 12px;
+}
+
+.modal-content h3 { color: #4CAF50; margin-bottom: 4px; }
+.modal-content p { color: #888; font-size: 0.9em; }
+
+#connect-search {
+    background-color: #222; border: 1px solid #444;
+    color: white; padding: 10px; border-radius: 6px;
+    outline: none;
+}
+#connect-search:focus { border-color: #4CAF50; }
+
+#connect-list {
+    max-height: 200px; overflow-y: auto;
+    border: 1px solid #222; border-radius: 6px;
+    margin-top: 5px;
+}
+
+.connect-option {
+    padding: 10px;
+    border-bottom: 1px solid #222;
+    cursor: pointer;
+    font-size: 0.9em; color: #ccc;
+    transition: background 0.2s;
+}
+.connect-option:hover { background-color: #333; color: white; }
+
+.modal-actions {
+    display: flex; justify-content: flex-end; margin-top: 10px;
+}
+
+#btn-cancel-connect {
+    background: transparent; border: 1px solid #444;
+    color: #888; padding: 6px 12px; border-radius: 4px;
+    cursor: pointer;
+}
+#btn-cancel-connect:hover { border-color: #666; color: white; }
