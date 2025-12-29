@@ -55,7 +55,23 @@
         </div>
 
     </div>
+    <div id="mini-map">
+        <canvas id="minimap-canvas"></canvas>
+        <div class="minimap-label">Neural Map</div>
+    </div>
 
+    <div id="connection-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Connect Element</h3>
+            <p>Choose an element to link with:</p>
+            <input type="text" id="connect-search" placeholder="Search element name...">
+            <div id="connect-list">
+                </div>
+            <div class="modal-actions">
+                <button id="btn-cancel-connect">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
