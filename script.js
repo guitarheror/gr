@@ -12,10 +12,8 @@ const addIconSymbol = document.getElementById('add-icon-symbol');
 const contextMenu = document.getElementById('context-menu');
 const btnAddText = document.getElementById('btn-add-text');
 
-// --- SISTEMA DE DADOS (HIERARQUIA v2.0) ---
-// Estrutura para armazenar todos os elementos
+// --- SISTEMA DE DADOS (HIERARQUIA) ---
 let allElements = {}; 
-// ID do local atual (começamos na raiz)
 let currentParentId = 'root'; 
 
 // Inicializa a Raiz
@@ -23,7 +21,7 @@ allElements['root'] = {
     id: 'root',
     type: 'root',
     name: 'Workspace',
-    children: [], // Lista de IDs dos filhos
+    children: [],
     panX: 0,
     panY: 0,
     zoom: 1
@@ -52,21 +50,15 @@ function updateTransform() {
     workspaceContainer.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
 }
 
-// Limpa a tela e desenha os elementos da pasta atual
 function renderElements() {
-    // 1. Limpa visualmente
     elementsLayer.innerHTML = '';
-    
-    // 2. Pega o objeto da pasta atual
     const currentFolder = allElements[currentParentId];
     
-    // 3. Cria o HTML para cada filho
     currentFolder.children.forEach(childId => {
         const elData = allElements[childId];
         createElementDOM(elData);
     });
 
-    // 4. Atualiza Breadcrumbs
     updateBreadcrumbsUI();
 }
 
@@ -77,26 +69,20 @@ function createElementDOM(data) {
     div.style.left = data.x + 'px';
     div.style.top = data.y + 'px';
     
-    // Conteúdo (Texto simples por enquanto)
     const content = document.createElement('span');
     content.classList.add('element-text-content');
     content.innerText = data.name;
     div.appendChild(content);
 
-    // Eventos do Elemento
-    
-    // 1. Arrastar Elemento
+    // 1. Arrastar Elemento (Botão Esquerdo)
     div.addEventListener('mousedown', (e) => {
-        if(e.button === 0) { // Botão Esquerdo
-            e.stopPropagation(); // Não arrastar o workspace
+        if(e.button === 0) { 
+            e.stopPropagation(); 
             isDraggingElement = true;
             draggedElementId = data.id;
             
-            // Posição inicial do mouse
             startDragX = e.clientX; 
             startDragY = e.clientY;
-            
-            // Posição inicial do elemento
             initialElemX = data.x;
             initialElemY = data.y;
             
@@ -104,7 +90,7 @@ function createElementDOM(data) {
         }
     });
 
-    // 2. Duplo Clique para ENTRAR (Nesting)
+    // 2. Duplo Clique para ENTRAR
     div.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         enterElement(data.id);
@@ -120,19 +106,15 @@ function createElementDOM(data) {
     elementsLayer.appendChild(div);
 }
 
-// --- LÓGICA DE ENTRAR E SAIR (Breadcrumbs) ---
+// --- LÓGICA DE BREADCRUMBS ---
 
 function enterElement(elementId) {
-    // 1. Salvar estado atual (Zoom e Pan da pasta antiga)
     allElements[currentParentId].panX = pannedX;
     allElements[currentParentId].panY = pannedY;
     allElements[currentParentId].zoom = scale;
 
-    // 2. Mudar ponteiro para nova pasta
     currentParentId = elementId;
 
-    // 3. Carregar estado da nova pasta (ou resetar se for novo)
-    // Se o elemento ainda não tiver estado salvo, começa no centro
     if (allElements[elementId].zoom === undefined) {
         scale = 1;
         pannedX = 0;
@@ -143,21 +125,17 @@ function enterElement(elementId) {
         pannedY = allElements[elementId].panY;
     }
 
-    // 4. Renderizar
     renderElements();
     updateTransform();
 }
 
 function navigateUpTo(targetId) {
-    // Salva o estado atual antes de sair
     allElements[currentParentId].panX = pannedX;
     allElements[currentParentId].panY = pannedY;
     allElements[currentParentId].zoom = scale;
 
-    // Define o novo pai
     currentParentId = targetId;
 
-    // Recupera o estado do alvo
     scale = allElements[targetId].zoom;
     pannedX = allElements[targetId].panX;
     pannedY = allElements[targetId].panY;
@@ -166,15 +144,12 @@ function navigateUpTo(targetId) {
     updateTransform();
 }
 
-// Função para construir o caminho de pão (Breadcrumbs) recursivamente
 function getBreadcrumbPath(currentId) {
     let path = [];
     let curr = allElements[currentId];
     
     while(curr) {
         path.unshift({ id: curr.id, name: curr.name });
-        // Procura quem é o pai deste elemento
-        // (Método simples: varrer tudo. O ideal seria ter parentId no obj, mas assim funciona pra agora)
         let parentFound = null;
         for (const key in allElements) {
             if (allElements[key].children && allElements[key].children.includes(curr.id)) {
@@ -189,21 +164,16 @@ function getBreadcrumbPath(currentId) {
 
 function updateBreadcrumbsUI() {
     const path = getBreadcrumbPath(currentParentId);
-    
-    // Limpa o texto atual
     breadcrumbText.innerHTML = '';
     
     path.forEach((step, index) => {
         const span = document.createElement('span');
         span.innerText = step.name;
         span.style.cursor = 'pointer';
-        
-        // Clique no breadcrumb volta para aquele nível
         span.onclick = () => navigateUpTo(step.id);
         
         breadcrumbText.appendChild(span);
         
-        // Adiciona separador se não for o último
         if (index < path.length - 1) {
             const separator = document.createElement('span');
             separator.innerText = ' / ';
@@ -214,67 +184,69 @@ function updateBreadcrumbsUI() {
     });
 }
 
+// --- LÓGICA DO BOTÃO ADICIONAR (Corrigido v2.1) ---
 
-// --- CRIAÇÃO DE ELEMENTOS ---
+// Toggle do Menu
+addButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isHidden = addMenu.classList.contains('hidden');
+    if (isHidden) {
+        addMenu.classList.remove('hidden');
+        addIconSymbol.textContent = 'close';
+    } else {
+        addMenu.classList.add('hidden');
+        addIconSymbol.textContent = 'add';
+    }
+});
 
-function createTextElement() {
-    const newId = 'el_' + Date.now();
-    
-    // Cria os dados do elemento
-    const newElement = {
-        id: newId,
-        type: 'text',
-        name: 'New Text',
-        x: (window.innerWidth / 2 - pannedX) / scale, // Centraliza na visão atual
-        y: (window.innerHeight / 2 - pannedY) / scale,
-        children: [] // Ele também pode ter filhos!
-    };
-
-    // Salva no "banco de dados"
-    allElements[newId] = newElement;
-    
-    // Adiciona o ID na lista de filhos do pai atual
-    allElements[currentParentId].children.push(newId);
-
-    renderElements();
-    
-    // Fecha o menu de adicionar
-    addMenu.classList.add('hidden');
-    addIconSymbol.textContent = 'add';
-}
-
-// Botão Adicionar Texto
+// Criação do Elemento de Texto
 if(btnAddText) {
-    btnAddText.addEventListener('click', createTextElement);
-}
+    btnAddText.addEventListener('click', () => {
+        const newId = 'el_' + Date.now();
+        const newElement = {
+            id: newId,
+            type: 'text',
+            name: 'New Text',
+            x: (window.innerWidth / 2 - pannedX) / scale - 75, // Centralizado ajustado
+            y: (window.innerHeight / 2 - pannedY) / scale - 40,
+            children: [] 
+        };
 
+        allElements[newId] = newElement;
+        allElements[currentParentId].children.push(newId);
+
+        renderElements();
+        
+        // Fecha menu após criar
+        addMenu.classList.add('hidden');
+        addIconSymbol.textContent = 'add';
+    });
+}
 
 // --- INTERAÇÕES DO MOUSE GLOBAIS ---
 
-// Menu de Contexto
 function showContextMenu(x, y, elementId) {
     contextMenu.style.left = x + 'px';
     contextMenu.style.top = y + 'px';
     contextMenu.classList.remove('hidden');
-    // Futuramente: Configurar ações baseadas no elementId
 }
 
-// Clique Global
 viewport.addEventListener('mousedown', (e) => {
-    // Esconder Context Menu se clicar fora
+    // Esconder Context Menu
     if (!contextMenu.classList.contains('hidden') && !e.target.closest('#context-menu')) {
         contextMenu.classList.add('hidden');
     }
 
-    // Fechar Add Menu se clicar fora
+    // Esconder Add Menu
     if (!addMenu.classList.contains('hidden') && !e.target.closest('#add-menu') && !e.target.closest('#add-button')) {
         addMenu.classList.add('hidden');
         addIconSymbol.textContent = 'add';
     }
 
-    // Lógica de Arrastar Workspace (Pan)
-    if ((e.button === 0 || e.button === 1) && !e.target.closest('.workspace-element') && !e.target.closest('.ui-element')) {
-        if (e.button === 1) e.preventDefault();
+    // --- ARRASTAR WORKSPACE (Apenas Botão do Meio v2.1) ---
+    // Botão 1 = Rodinha (Middle Click)
+    if (e.button === 1 && !e.target.closest('.workspace-element') && !e.target.closest('.ui-element')) {
+        e.preventDefault(); // Impede o scroll automático do navegador
         isDraggingWorkspace = true;
         startDragX = e.clientX - pannedX;
         startDragY = e.clientY - pannedY;
@@ -283,7 +255,7 @@ viewport.addEventListener('mousedown', (e) => {
 });
 
 window.addEventListener('mousemove', (e) => {
-    // 1. Arrastando Workspace
+    // 1. Pan Workspace (Somente se for rodinha)
     if (isDraggingWorkspace) {
         e.preventDefault();
         pannedX = e.clientX - startDragX;
@@ -291,19 +263,16 @@ window.addEventListener('mousemove', (e) => {
         updateTransform();
     }
 
-    // 2. Arrastando Elemento
+    // 2. Arrastar Elemento
     if (isDraggingElement && draggedElementId) {
         e.preventDefault();
-        // Delta do movimento do mouse
         const deltaX = e.clientX - startDragX;
         const deltaY = e.clientY - startDragY;
         
-        // Converte delta de pixels da tela para unidades do workspace (considerando zoom)
         const elementData = allElements[draggedElementId];
         elementData.x = initialElemX + (deltaX / scale);
         elementData.y = initialElemY + (deltaY / scale);
         
-        // Atualiza visualmente apenas este elemento (performance)
         const div = document.getElementById(draggedElementId);
         if(div) {
             div.style.left = elementData.x + 'px';
@@ -339,7 +308,6 @@ viewport.addEventListener('wheel', (e) => {
     updateTransform();
 }, { passive: false });
 
-// Prevenir menu padrão global
 viewport.addEventListener('contextmenu', (e) => e.preventDefault());
 
 // Inicializa
