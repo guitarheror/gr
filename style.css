@@ -1,0 +1,118 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Impede barras de rolagem nativas */
+    background-color: #000000; /* Fundo preto total */
+    font-family: sans-serif;
+}
+
+#viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* --- O Workspace Infinito --- */
+#workspace-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* A mágica do pan/zoom acontece via transform no JS */
+    transform-origin: 0 0; /* O ponto de origem da escala é o canto superior esquerdo */
+}
+
+/* Padrão de grade (dots) no fundo */
+#grid-background {
+    position: absolute;
+    /* Criamos uma área muito grande para simular o infinito antes de precisar repetir */
+    top: -5000px;
+    left: -5000px;
+    width: 10000px;
+    height: 10000px;
+    /* Padrão de pontos usando gradiente radial CSS */
+    background-image: radial-gradient(#333333 1px, transparent 1px);
+    background-size: 20px 20px; /* Espaçamento entre os pontos */
+    pointer-events: none; /* O mouse ignora o background e clica no container */
+}
+
+
+/* --- Elementos de UI Fixos --- */
+.ui-element {
+    position: absolute;
+    z-index: 1000; /* Garante que fiquem sobre o workspace */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Topo Esquerdo: Breadcrumbs */
+.top-left-breadcrumbs {
+    top: 20px;
+    left: 20px;
+    background-color: #1a1a1a;
+    padding: 8px 16px;
+    border-radius: 20px;
+    color: white;
+    border: 1px solid #333;
+}
+
+.breadcrumb-icon {
+    color: #4CAF50; /* Verde do ícone */
+    margin-right: 8px;
+    font-size: 20px !important;
+}
+
+.breadcrumb-text {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Topo Direito: Configurações */
+.top-right-settings {
+    top: 20px;
+    right: 20px;
+    background-color: #1a1a1a;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #333;
+    color: #999;
+}
+
+.settings-icon {
+    font-size: 20px !important;
+}
+
+/* Inferior Esquerdo: Botão Adicionar */
+.bottom-left-add {
+    bottom: 20px;
+    left: 20px;
+    background-color: #4CAF50; /* Verde brilhante */
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    color: black;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+}
+
+.bottom-left-add:active {
+    transform: scale(0.95); /* Pequeno efeito ao clicar */
+}
+
+.add-icon {
+    font-size: 32px !important;
+    font-weight: bold;
+}
