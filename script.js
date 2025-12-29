@@ -1,315 +1,319 @@
-// --- REFERÊNCIAS GLOBAIS ---
-const viewport = document.getElementById('viewport');
-const workspaceContainer = document.getElementById('workspace-container');
-const elementsLayer = document.getElementById('elements-layer');
-const breadcrumbsContainer = document.getElementById('breadcrumbs');
-const breadcrumbText = document.getElementById('breadcrumb-text');
+document.addEventListener('DOMContentLoaded', () => {
+    // --- REFERÊNCIAS GLOBAIS ---
+    const viewport = document.getElementById('viewport');
+    const workspaceContainer = document.getElementById('workspace-container');
+    const elementsLayer = document.getElementById('elements-layer');
+    const breadcrumbText = document.getElementById('breadcrumb-text');
 
-// UI Menus
-const addButton = document.getElementById('add-button');
-const addMenu = document.getElementById('add-menu');
-const addIconSymbol = document.getElementById('add-icon-symbol');
-const contextMenu = document.getElementById('context-menu');
-const btnAddText = document.getElementById('btn-add-text');
+    // UI Menus
+    const addButton = document.getElementById('add-button');
+    const addMenu = document.getElementById('add-menu');
+    const addIconSymbol = document.getElementById('add-icon-symbol');
+    const contextMenu = document.getElementById('context-menu');
+    const btnAddText = document.getElementById('btn-add-text');
+    const btnCtxOpen = document.getElementById('ctx-open');
 
-// --- SISTEMA DE DADOS (HIERARQUIA) ---
-let allElements = {}; 
-let currentParentId = 'root'; 
+    // --- ESTADO E DADOS ---
+    let allElements = {
+        'root': { id: 'root', type: 'root', name: 'Workspace', children: [], panX: 0, panY: 0, zoom: 1 }
+    };
+    let currentParentId = 'root'; 
 
-// Inicializa a Raiz
-allElements['root'] = {
-    id: 'root',
-    type: 'root',
-    name: 'Workspace',
-    children: [],
-    panX: 0,
-    panY: 0,
-    zoom: 1
-};
+    // Variáveis de Visualização
+    let scale = 1;
+    let pannedX = 0;
+    let pannedY = 0;
 
-// --- ESTADO VISUAL ATUAL ---
-let scale = 1;
-let pannedX = 0;
-let pannedY = 0;
-
-// Variáveis de Interação
-let isDraggingWorkspace = false;
-let isDraggingElement = false;
-let draggedElementId = null;
-let startDragX, startDragY;
-let initialElemX, initialElemY;
-
-// Configurações de Zoom
-const ZOOM_SPEED = 0.1;
-const MAX_SCALE = 5;
-const MIN_SCALE = 0.1;
-
-// --- FUNÇÕES DE RENDERIZAÇÃO E NAVEGAÇÃO ---
-
-function updateTransform() {
-    workspaceContainer.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
-}
-
-function renderElements() {
-    elementsLayer.innerHTML = '';
-    const currentFolder = allElements[currentParentId];
+    // Variáveis de Controle
+    let isDraggingWorkspace = false;
+    let isDraggingElement = false;
+    let draggedElementId = null;
+    let startDragX, startDragY;
+    let initialElemX, initialElemY;
     
-    currentFolder.children.forEach(childId => {
-        const elData = allElements[childId];
-        createElementDOM(elData);
-    });
+    // Variável temporária para saber em quem clicamos com botão direito
+    let contextTargetId = null;
 
-    updateBreadcrumbsUI();
-}
+    const ZOOM_SPEED = 0.1;
+    const MAX_SCALE = 5;
+    const MIN_SCALE = 0.1;
 
-function createElementDOM(data) {
-    const div = document.createElement('div');
-    div.classList.add('workspace-element');
-    div.id = data.id;
-    div.style.left = data.x + 'px';
-    div.style.top = data.y + 'px';
-    
-    const content = document.createElement('span');
-    content.classList.add('element-text-content');
-    content.innerText = data.name;
-    div.appendChild(content);
-
-    // 1. Arrastar Elemento (Botão Esquerdo)
-    div.addEventListener('mousedown', (e) => {
-        if(e.button === 0) { 
-            e.stopPropagation(); 
-            isDraggingElement = true;
-            draggedElementId = data.id;
-            
-            startDragX = e.clientX; 
-            startDragY = e.clientY;
-            initialElemX = data.x;
-            initialElemY = data.y;
-            
-            div.style.cursor = 'grabbing';
-        }
-    });
-
-    // 2. Duplo Clique para ENTRAR
-    div.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        enterElement(data.id);
-    });
-
-    // 3. Botão Direito (Menu de Contexto)
-    div.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        showContextMenu(e.clientX, e.clientY, data.id);
-    });
-
-    elementsLayer.appendChild(div);
-}
-
-// --- LÓGICA DE BREADCRUMBS ---
-
-function enterElement(elementId) {
-    allElements[currentParentId].panX = pannedX;
-    allElements[currentParentId].panY = pannedY;
-    allElements[currentParentId].zoom = scale;
-
-    currentParentId = elementId;
-
-    if (allElements[elementId].zoom === undefined) {
-        scale = 1;
-        pannedX = 0;
-        pannedY = 0;
-    } else {
-        scale = allElements[elementId].zoom;
-        pannedX = allElements[elementId].panX;
-        pannedY = allElements[elementId].panY;
+    // --- CORE: ATUALIZAÇÃO VISUAL ---
+    function updateTransform() {
+        workspaceContainer.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
     }
 
-    renderElements();
-    updateTransform();
-}
-
-function navigateUpTo(targetId) {
-    allElements[currentParentId].panX = pannedX;
-    allElements[currentParentId].panY = pannedY;
-    allElements[currentParentId].zoom = scale;
-
-    currentParentId = targetId;
-
-    scale = allElements[targetId].zoom;
-    pannedX = allElements[targetId].panX;
-    pannedY = allElements[targetId].panY;
-
-    renderElements();
-    updateTransform();
-}
-
-function getBreadcrumbPath(currentId) {
-    let path = [];
-    let curr = allElements[currentId];
-    
-    while(curr) {
-        path.unshift({ id: curr.id, name: curr.name });
-        let parentFound = null;
-        for (const key in allElements) {
-            if (allElements[key].children && allElements[key].children.includes(curr.id)) {
-                parentFound = allElements[key];
-                break;
+    // --- LÓGICA DE ELEMENTOS E HIERARQUIA ---
+    function renderElements() {
+        elementsLayer.innerHTML = '';
+        const currentFolder = allElements[currentParentId];
+        
+        currentFolder.children.forEach(childId => {
+            if(allElements[childId]) {
+                createElementDOM(allElements[childId]);
             }
-        }
-        curr = parentFound;
+        });
+        updateBreadcrumbsUI();
     }
-    return path;
-}
 
-function updateBreadcrumbsUI() {
-    const path = getBreadcrumbPath(currentParentId);
-    breadcrumbText.innerHTML = '';
-    
-    path.forEach((step, index) => {
-        const span = document.createElement('span');
-        span.innerText = step.name;
-        span.style.cursor = 'pointer';
-        span.onclick = () => navigateUpTo(step.id);
+    function createElementDOM(data) {
+        const div = document.createElement('div');
+        div.classList.add('workspace-element');
+        div.id = data.id;
+        div.style.left = data.x + 'px';
+        div.style.top = data.y + 'px';
         
-        breadcrumbText.appendChild(span);
+        const content = document.createElement('span');
+        content.classList.add('element-text-content');
+        content.innerText = data.name;
+        div.appendChild(content);
+
+        // EVENTOS DO ELEMENTO (TEXTO)
         
-        if (index < path.length - 1) {
-            const separator = document.createElement('span');
-            separator.innerText = ' / ';
-            separator.style.margin = '0 5px';
-            separator.style.color = '#666';
-            breadcrumbText.appendChild(separator);
-        }
-    });
-}
+        // 1. Botão Esquerdo: Arrastar o elemento
+        div.addEventListener('mousedown', (e) => {
+            if(e.button === 0) { // Somente botão esquerdo
+                e.stopPropagation(); // Impede que o clique passe pro fundo
+                isDraggingElement = true;
+                draggedElementId = data.id;
+                startDragX = e.clientX; 
+                startDragY = e.clientY;
+                initialElemX = data.x;
+                initialElemY = data.y;
+                div.style.cursor = 'grabbing';
+            }
+        });
 
-// --- LÓGICA DO BOTÃO ADICIONAR (Corrigido v2.1) ---
+        // 2. Duplo Clique: Entrar na camada
+        div.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            enterElement(data.id);
+        });
 
-// Toggle do Menu
-addButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isHidden = addMenu.classList.contains('hidden');
-    if (isHidden) {
-        addMenu.classList.remove('hidden');
-        addIconSymbol.textContent = 'close';
-    } else {
-        addMenu.classList.add('hidden');
-        addIconSymbol.textContent = 'add';
+        // 3. Botão Direito: Menu de Contexto
+        div.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            contextTargetId = data.id; // Salva quem foi clicado
+            showContextMenu(e.clientX, e.clientY);
+        });
+
+        elementsLayer.appendChild(div);
     }
-});
 
-// Criação do Elemento de Texto
-if(btnAddText) {
-    btnAddText.addEventListener('click', () => {
-        const newId = 'el_' + Date.now();
-        const newElement = {
-            id: newId,
-            type: 'text',
-            name: 'New Text',
-            x: (window.innerWidth / 2 - pannedX) / scale - 75, // Centralizado ajustado
-            y: (window.innerHeight / 2 - pannedY) / scale - 40,
-            children: [] 
-        };
+    // --- CRIAÇÃO DE NOVOS ELEMENTOS ---
+    if(btnAddText) {
+        btnAddText.addEventListener('click', () => {
+            const newId = 'el_' + Date.now();
+            const newElement = {
+                id: newId,
+                type: 'text',
+                name: 'New Text',
+                // Centraliza baseado no pan/zoom atual
+                x: (window.innerWidth / 2 - pannedX) / scale - 75,
+                y: (window.innerHeight / 2 - pannedY) / scale - 40,
+                children: [] 
+            };
 
-        allElements[newId] = newElement;
-        allElements[currentParentId].children.push(newId);
+            allElements[newId] = newElement;
+            allElements[currentParentId].children.push(newId);
+            renderElements();
+            closeAddMenu();
+        });
+    }
+
+    // --- NAVEGAÇÃO (Breadcrumbs) ---
+    function enterElement(elementId) {
+        // Salva estado do pai atual
+        allElements[currentParentId].panX = pannedX;
+        allElements[currentParentId].panY = pannedY;
+        allElements[currentParentId].zoom = scale;
+
+        // Muda para o filho
+        currentParentId = elementId;
+        
+        // Recupera ou Reseta estado do filho
+        const nextData = allElements[elementId];
+        scale = nextData.zoom || 1;
+        pannedX = nextData.panX || 0;
+        pannedY = nextData.panY || 0;
 
         renderElements();
-        
-        // Fecha menu após criar
-        addMenu.classList.add('hidden');
-        addIconSymbol.textContent = 'add';
-    });
-}
-
-// --- INTERAÇÕES DO MOUSE GLOBAIS ---
-
-function showContextMenu(x, y, elementId) {
-    contextMenu.style.left = x + 'px';
-    contextMenu.style.top = y + 'px';
-    contextMenu.classList.remove('hidden');
-}
-
-viewport.addEventListener('mousedown', (e) => {
-    // Esconder Context Menu
-    if (!contextMenu.classList.contains('hidden') && !e.target.closest('#context-menu')) {
-        contextMenu.classList.add('hidden');
-    }
-
-    // Esconder Add Menu
-    if (!addMenu.classList.contains('hidden') && !e.target.closest('#add-menu') && !e.target.closest('#add-button')) {
-        addMenu.classList.add('hidden');
-        addIconSymbol.textContent = 'add';
-    }
-
-    // --- ARRASTAR WORKSPACE (Apenas Botão do Meio v2.1) ---
-    // Botão 1 = Rodinha (Middle Click)
-    if (e.button === 1 && !e.target.closest('.workspace-element') && !e.target.closest('.ui-element')) {
-        e.preventDefault(); // Impede o scroll automático do navegador
-        isDraggingWorkspace = true;
-        startDragX = e.clientX - pannedX;
-        startDragY = e.clientY - pannedY;
-        viewport.style.cursor = 'grabbing';
-    }
-});
-
-window.addEventListener('mousemove', (e) => {
-    // 1. Pan Workspace (Somente se for rodinha)
-    if (isDraggingWorkspace) {
-        e.preventDefault();
-        pannedX = e.clientX - startDragX;
-        pannedY = e.clientY - startDragY;
         updateTransform();
     }
 
-    // 2. Arrastar Elemento
-    if (isDraggingElement && draggedElementId) {
-        e.preventDefault();
-        const deltaX = e.clientX - startDragX;
-        const deltaY = e.clientY - startDragY;
+    function navigateUpTo(targetId) {
+        // Salva estado atual
+        allElements[currentParentId].panX = pannedX;
+        allElements[currentParentId].panY = pannedY;
+        allElements[currentParentId].zoom = scale;
+
+        // Muda para o alvo
+        currentParentId = targetId;
+        const targetData = allElements[targetId];
+        scale = targetData.zoom;
+        pannedX = targetData.panX;
+        pannedY = targetData.panY;
+
+        renderElements();
+        updateTransform();
+    }
+
+    function updateBreadcrumbsUI() {
+        breadcrumbText.innerHTML = '';
+        let path = [];
+        let curr = allElements[currentParentId];
         
-        const elementData = allElements[draggedElementId];
-        elementData.x = initialElemX + (deltaX / scale);
-        elementData.y = initialElemY + (deltaY / scale);
-        
-        const div = document.getElementById(draggedElementId);
-        if(div) {
-            div.style.left = elementData.x + 'px';
-            div.style.top = elementData.y + 'px';
+        // Reconstrói o caminho até a raiz
+        while(curr) {
+            path.unshift({ id: curr.id, name: curr.name });
+            let parent = null;
+            // Busca ineficiente mas funcional para v2
+            for(const key in allElements) {
+                if(allElements[key].children && allElements[key].children.includes(curr.id)) {
+                    parent = allElements[key];
+                    break;
+                }
+            }
+            curr = parent;
+        }
+
+        path.forEach((step, index) => {
+            const span = document.createElement('span');
+            span.innerText = step.name;
+            span.onclick = () => navigateUpTo(step.id);
+            breadcrumbText.appendChild(span);
+            
+            if (index < path.length - 1) {
+                const sep = document.createElement('span');
+                sep.innerText = ' / ';
+                sep.style.color = '#666';
+                sep.style.margin = '0 5px';
+                breadcrumbText.appendChild(sep);
+            }
+        });
+    }
+
+    // --- INTERFACE UTILS ---
+    function toggleAddMenu() {
+        const isHidden = addMenu.classList.contains('hidden');
+        if (isHidden) {
+            addMenu.classList.remove('hidden');
+            addIconSymbol.textContent = 'close';
+        } else {
+            closeAddMenu();
         }
     }
-});
 
-window.addEventListener('mouseup', () => {
-    isDraggingWorkspace = false;
-    isDraggingElement = false;
-    draggedElementId = null;
-    viewport.style.cursor = 'default';
-});
+    function closeAddMenu() {
+        addMenu.classList.add('hidden');
+        addIconSymbol.textContent = 'add';
+    }
 
-// Zoom
-viewport.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = -Math.sign(e.deltaY); 
-    const zoomFactor = 1 + (delta * ZOOM_SPEED);
-    let newScale = scale * zoomFactor;
-    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    function showContextMenu(x, y) {
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        contextMenu.classList.remove('hidden');
+    }
 
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
-    const workspaceMouseX = (mouseX - pannedX) / scale;
-    const workspaceMouseY = (mouseY - pannedY) / scale;
+    function closeContextMenu() {
+        contextMenu.classList.add('hidden');
+    }
 
-    scale = newScale;
-    pannedX = mouseX - (workspaceMouseX * scale);
-    pannedY = mouseY - (workspaceMouseY * scale);
+    // Listeners de UI
+    addButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleAddMenu();
+    });
 
+    if(btnCtxOpen) {
+        btnCtxOpen.addEventListener('click', () => {
+            if(contextTargetId) enterElement(contextTargetId);
+            closeContextMenu();
+        });
+    }
+
+    // --- CONTROLES GLOBAIS (Mouse) ---
+    
+    viewport.addEventListener('mousedown', (e) => {
+        // 1. Fechar menus se clicar fora
+        if (!addMenu.classList.contains('hidden') && !e.target.closest('#add-menu') && !e.target.closest('#add-button')) {
+            closeAddMenu();
+        }
+        if (!contextMenu.classList.contains('hidden') && !e.target.closest('#context-menu')) {
+            closeContextMenu();
+        }
+
+        // 2. MOVER WORKSPACE (Apenas Botão do Meio = 1)
+        if (e.button === 1) {
+            e.preventDefault(); // Evita scroll do navegador
+            // Verifica se NÃO estamos clicando em um elemento ou UI
+            if(!e.target.closest('.workspace-element') && !e.target.closest('.ui-element')) {
+                isDraggingWorkspace = true;
+                startDragX = e.clientX - pannedX;
+                startDragY = e.clientY - pannedY;
+                viewport.style.cursor = 'grabbing';
+            }
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        // Mover Workspace
+        if (isDraggingWorkspace) {
+            e.preventDefault();
+            pannedX = e.clientX - startDragX;
+            pannedY = e.clientY - startDragY;
+            updateTransform();
+        }
+
+        // Mover Elemento
+        if (isDraggingElement && draggedElementId) {
+            e.preventDefault();
+            const deltaX = e.clientX - startDragX;
+            const deltaY = e.clientY - startDragY;
+            
+            const elData = allElements[draggedElementId];
+            elData.x = initialElemX + (deltaX / scale);
+            elData.y = initialElemY + (deltaY / scale);
+            
+            const div = document.getElementById(draggedElementId);
+            if(div) {
+                div.style.left = elData.x + 'px';
+                div.style.top = elData.y + 'px';
+            }
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDraggingWorkspace = false;
+        isDraggingElement = false;
+        draggedElementId = null;
+        viewport.style.cursor = 'default';
+    });
+
+    // Zoom
+    viewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = -Math.sign(e.deltaY); 
+        const zoomFactor = 1 + (delta * ZOOM_SPEED);
+        let newScale = scale * zoomFactor;
+        newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        const workspaceMouseX = (mouseX - pannedX) / scale;
+        const workspaceMouseY = (mouseY - pannedY) / scale;
+
+        scale = newScale;
+        pannedX = mouseX - (workspaceMouseX * scale);
+        pannedY = mouseY - (workspaceMouseY * scale);
+
+        updateTransform();
+    }, { passive: false });
+
+    viewport.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Inicialização
+    renderElements();
     updateTransform();
-}, { passive: false });
-
-viewport.addEventListener('contextmenu', (e) => e.preventDefault());
-
-// Inicializa
-renderElements();
-updateTransform();
+});
