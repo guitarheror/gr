@@ -1,9 +1,9 @@
 :root {
     --bg-color: #000000;
-    --dot-color: #222222; /* Pontos muito sutis */
-    --neon-green: #4ade80; /* O verde exato da imagem */
-    --surface-dark: #111111;
-    --border-subtle: #333333;
+    --dot-color: #222; /* Pontos cinza-escuro bem sutis */
+    --neon-green: #4ade80; /* Verde idêntico à imagem */
+    --ui-surface: #0a0a0a; /* Quase preto para os botões */
+    --ui-border: #222222; /* Borda sutil */
     --text-primary: #ffffff;
 }
 
@@ -49,7 +49,7 @@ body, html {
 .ui-layer {
     position: fixed;
     z-index: 100;
-    padding: 24px; /* Espaçamento das bordas da tela */
+    padding: 24px;
 }
 
 .top-left { top: 0; left: 0; }
@@ -60,10 +60,10 @@ body, html {
 .ui-pill {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background-color: var(--surface-dark);
-    border: 1px solid var(--border-subtle);
-    border-radius: 99px;
+    gap: 12px;
+    background-color: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: 99px; /* Pílula completa */
     padding: 10px 20px;
     color: white;
     font-weight: 500;
@@ -73,15 +73,11 @@ body, html {
 }
 
 .ui-pill:hover {
-    border-color: #555;
-    background-color: #1a1a1a;
+    border-color: #333;
+    background-color: #111;
 }
 
-.icon-green {
-    stroke: var(--neon-green);
-}
-
-/* Botão Redondo Transparente (Settings) */
+/* Botão Redondo (Settings) */
 .ui-circle {
     width: 44px;
     height: 44px;
@@ -90,20 +86,20 @@ body, html {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: var(--surface-dark);
-    border: 1px solid var(--border-subtle);
+    background-color: var(--ui-surface);
+    border: 1px solid var(--ui-border);
     transition: all 0.2s ease;
 }
 
 .ui-circle:hover {
-    border-color: #555;
-    background-color: #1a1a1a;
+    border-color: #333;
+    background-color: #111;
 }
 
 /* Botão Flutuante Principal (Add +) */
 .fab-main {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     background-color: var(--neon-green);
     border: none;
@@ -111,15 +107,16 @@ body, html {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     
-    /* O Glow verde atrás do botão */
-    box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+    /* O Glow verde atrás do botão (repare na imagem, ele brilha) */
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .fab-main:hover {
     transform: scale(1.05);
-    box-shadow: 0 6px 25px rgba(74, 222, 128, 0.6);
+    box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
 }
 
 .fab-main:active {
