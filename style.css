@@ -1,124 +1,78 @@
-:root {
-    --bg-color: #000000;
-    --dot-color: #222; /* Pontos cinza-escuro bem sutis */
-    --neon-green: #4ade80; /* Verde idêntico à imagem */
-    --ui-surface: #0a0a0a; /* Quase preto para os botões */
-    --ui-border: #222222; /* Borda sutil */
-    --text-primary: #ffffff;
-}
-
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: var(--bg-color);
-    font-family: 'Inter', sans-serif;
-    color: var(--text-primary);
-}
-
-/* --- Canvas Infinito --- */
-#viewport {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    cursor: grab;
-}
-
-#viewport:active {
-    cursor: grabbing;
-}
-
-#world {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    transform-origin: 0 0;
-    will-change: transform;
-    
-    /* Grade de pontos sutil */
-    background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
-    background-size: 24px 24px;
-}
-
-/* --- UI Layers --- */
-.ui-layer {
-    position: fixed;
-    z-index: 100;
-    padding: 24px;
-}
-
-.top-left { top: 0; left: 0; }
-.top-right { top: 0; right: 0; }
-.bottom-left { bottom: 0; left: 0; }
-
-/* Botão Pílula (Workspace) */
-.ui-pill {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background-color: var(--ui-surface);
-    border: 1px solid var(--ui-border);
-    border-radius: 99px; /* Pílula completa */
-    padding: 10px 20px;
-    color: white;
-    font-weight: 500;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.ui-pill:hover {
-    border-color: #333;
-    background-color: #111;
-}
-
-/* Botão Redondo (Settings) */
-.ui-circle {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background-color: var(--ui-surface);
-    border: 1px solid var(--ui-border);
-    transition: all 0.2s ease;
-}
-
-.ui-circle:hover {
-    border-color: #333;
-    background-color: #111;
-}
-
-/* Botão Flutuante Principal (Add +) */
-.fab-main {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: var(--neon-green);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    
-    /* O Glow verde atrás do botão (repare na imagem, ele brilha) */
-    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
-    
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.fab-main:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(74, 222, 128, 0.5);
-}
-
-.fab-main:active {
-    transform: scale(0.95);
-}
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infinite Canvas Simplified</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0df269",
+                        "background-light": "#f5f8f7",
+                        "background-dark": "#102217",
+                        "surface-dark": "#183423",
+                        "surface-darker": "#0b1811",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #102217; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #183423; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #316847; 
+        }.bg-dot-pattern {
+            background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
+            background-size: 32px 32px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-screen selection:bg-primary selection:text-background-dark">
+<div class="relative h-full w-full flex">
+<nav class="z-50 flex flex-col justify-start items-center w-20 h-full py-6 bg-surface-darker/90 backdrop-blur-md border-r border-[#316847]">
+<div class="flex flex-col gap-8 items-center w-full">
+<div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/50 cursor-pointer hover:border-primary transition-colors" data-alt="User profile avatar gradient" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA6ULsTZfmdKbQbE151cmPt-mWcteuUOy5hUjSYw6EnBNsKhui5sMa6Iystl0Umt6YNQ_lE-T84oxKvsHraqlwJNExlEHL80LaSU-dpkxZbhPlnkRJWay6Cc5l0DWR1sGV50-yjAC4AesJAhgtYeugiSnuFktQjnp_TRoFUtnL8ETooP7RpLFTfxnc70Cew7kczA-m18jW3S3RLqBHhnKKiB480y2lv1cVcvd1s8bIlDJEXjlQJ2PJVXF8lPZxAnA2CuLoiDtJUff_U");'></div>
+<div class="flex flex-col gap-6 w-full items-center">
+<button class="group flex items-center justify-center p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-background-dark transition-all">
+<span class="material-symbols-outlined text-[28px]">dashboard</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="relative flex-1 h-full w-full overflow-hidden bg-background-dark cursor-grab active:cursor-grabbing">
+<div class="absolute inset-0 bg-dot-pattern opacity-40 pointer-events-none transform scale-100 origin-center"></div>
+<div class="absolute top-6 left-6 z-40 bg-surface-darker/80 backdrop-blur rounded-full p-3 border border-[#316847] shadow-lg flex items-center justify-center">
+<a class="text-[#90cba8] hover:text-primary transition-colors flex items-center" href="#">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</a>
+</div>
+<div class="absolute inset-0 top-0 left-0 w-[200%] h-[200%] transform -translate-x-1/4 -translate-y-1/4 origin-center">
+</div>
+<div class="absolute bottom-8 right-8 z-40 w-48 h-32 bg-surface-darker/90 backdrop-blur border border-[#316847] rounded-lg shadow-xl overflow-hidden hidden md:block">
+<div class="relative w-full h-full bg-dot-pattern opacity-50">
+<div class="absolute top-[25%] left-[25%] w-[50%] h-[50%] border-2 border-primary bg-primary/10 shadow-[0_0_10px_rgba(13,242,105,0.2)] rounded-sm"></div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
