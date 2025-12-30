@@ -1,196 +1,120 @@
-// --- CORE.JS: O Motor do Workspace ---
-
-const Core = {
-    // Estado Global
-    viewport: document.getElementById('viewport'),
-    container: document.getElementById('workspace-container'),
-    elementsLayer: document.getElementById('elements-layer'),
-    menuContainer: document.getElementById('menu-items-container'),
-    
+const Brain = {
+    // Estado do nosso mundo
     state: {
-        scale: 1,
-        panX: 0, panY: 0,
-        isDraggingSpace: false,
-        startX: 0, startY: 0,
-        currentParentId: 'root',
-        elements: { 'root': { id: 'root', type: 'root', children: [], connections: [] } }
+        scale: 1,       // Nível de zoom atual
+        x: 0,           // Posição horizontal do mundo
+        y: 0,           // Posição vertical do mundo
+        isPanning: false, // Se estamos arrastando o fundo
+        startX: 0,      // Posição inicial do mouse ao começar a arrastar
+        startY: 0
     },
 
-    // Registro de Plugins (Aqui que a mágica acontece)
-    plugins: {},
-
-    registerPlugin: function(type, definition) {
-        this.plugins[type] = definition;
-        console.log(`Plugin carregado: ${type}`);
-        this.addMenuButton(type, definition);
+    // Configurações
+    config: {
+        minScale: 0.1,  // Zoom mínimo (10%)
+        maxScale: 5,    // Zoom máximo (500%)
+        zoomSpeed: 0.001 // Sensibilidade da roda do mouse
     },
+
+    // Referências ao DOM
+    viewport: document.getElementById('viewport'),
+    world: document.getElementById('world'),
 
     // Inicialização
-    init: function() {
-        this.setupEvents();
-        this.render();
+    init() {
+        // Desabilita o menu de contexto padrão do navegador (botão direito)
+        // para podermos usar o nosso próprio no futuro.
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        this.addEventListeners();
         this.updateTransform();
-        console.log("Core v4.0 Inicializado");
+        console.log("Brain 0.1 iniciado. Workspace infinito pronto.");
     },
 
-    // Adiciona botão no menu automaticamente
-    addMenuButton: function(type, def) {
-        const div = document.createElement('div');
-        div.className = 'menu-item';
-        div.innerHTML = `<span class="material-symbols-outlined menu-icon">${def.icon}</span><span class="menu-text">${def.label}</span>`;
-        div.onclick = () => {
-            this.createElement(type);
-            document.getElementById('add-menu').classList.add('hidden');
-        };
-        this.menuContainer.appendChild(div);
+    addEventListeners() {
+        // --- Zoom (Roda do Mouse) ---
+        this.viewport.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
+
+        // --- Pan (Arrastar o fundo com botão esquerdo) ---
+        this.viewport.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        window.addEventListener('mouseup', () => this.handleMouseUp());
     },
 
-    // Criação de Elemento Genérico
-    createElement: function(type) {
-        const plugin = this.plugins[type];
-        if (!plugin) return;
+    // Lógica do Zoom no Cursor
+    handleWheel(e) {
+        e.preventDefault();
 
-        const id = 'el_' + Date.now();
-        // Dados básicos que todo elemento tem
-        const baseData = {
-            id: id, type: type,
-            x: (window.innerWidth/2 - this.state.panX)/this.state.scale - 100,
-            y: (window.innerHeight/2 - this.state.panY)/this.state.scale - 75,
-            width: 250, height: 180,
-            children: [], connections: [],
-            ...plugin.defaultData // Dados específicos do plugin (ex: texto, cor)
-        };
+        // 1. Calcula a posição do mouse relativa ao viewport
+        const rect = this.viewport.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
 
-        this.state.elements[id] = baseData;
-        this.state.elements[this.state.currentParentId].children.push(id);
-        this.render();
-    },
+        // 2. Calcula o ponto no "mundo" onde o mouse está antes do zoom
+        const worldXBeforeZoom = (mouseX - this.state.x) / this.state.scale;
+        const worldYBeforeZoom = (mouseY - this.state.y) / this.state.scale;
 
-    // Renderização
-    render: function() {
-        this.elementsLayer.innerHTML = '';
-        const parent = this.state.elements[this.state.currentParentId];
+        // 3. Aplica o zoom (baseado na direção da roda)
+        // Usamos exponencial para um zoom mais suave
+        const zoomFactor = Math.exp(-e.deltaY * this.config.zoomSpeed);
+        let newScale = this.state.scale * zoomFactor;
+
+        // Limita o zoom entre o mínimo e máximo definidos
+        newScale = Math.min(Math.max(newScale, this.config.minScale), this.config.maxScale);
         
-        // Verifica se o pai atual é um plugin que exige renderização customizada (Split View)
-        const parentPlugin = this.plugins[parent.type];
-        if (parentPlugin && parentPlugin.renderInside) {
-            parentPlugin.renderInside(parent, this.elementsLayer);
-            return; // O plugin assume o controle da tela
-        } else {
-            // Renderização Padrão (Grid)
-            this.container.style.display = 'block';
-             // Limpa split views antigos se houver
-            const split = document.getElementById('split-view-container');
-            if(split) split.remove();
-        }
+        // Atualiza o estado do scale
+        this.state.scale = newScale;
 
-        // Renderiza os filhos
-        parent.children.forEach(childId => {
-            const data = this.state.elements[childId];
-            if (data) this.renderElementDOM(data);
-        });
-        
-        this.updateBreadcrumbs();
-    },
+        // 4. Calcula a nova posição do mundo para que o ponto sob o mouse não se mova
+        this.state.x = mouseX - worldXBeforeZoom * newScale;
+        this.state.y = mouseY - worldYBeforeZoom * newScale;
 
-    renderElementDOM: function(data) {
-        const div = document.createElement('div');
-        div.className = 'workspace-element';
-        div.id = data.id;
-        div.style.left = data.x + 'px';
-        div.style.top = data.y + 'px';
-        div.style.width = data.width + 'px';
-        div.style.height = data.height + 'px';
-
-        // O Plugin decide o que vai DENTRO do quadrado
-        const plugin = this.plugins[data.type];
-        if (plugin) {
-            div.innerHTML = plugin.renderPreview(data);
-        }
-
-        // Lógica de Arrastar (Genérica do Core)
-        div.addEventListener('mousedown', (e) => this.handleElementDrag(e, data));
-        div.addEventListener('dblclick', (e) => { e.stopPropagation(); this.enterElement(data.id); });
-        
-        this.elementsLayer.appendChild(div);
-    },
-
-    // Navegação
-    enterElement: function(id) {
-        this.state.currentParentId = id;
-        this.state.scale = 1; this.state.panX = 0; this.state.panY = 0;
-        this.render();
         this.updateTransform();
     },
 
-    updateTransform: function() {
-        this.container.style.transform = `translate(${this.state.panX}px, ${this.state.panY}px) scale(${this.state.scale})`;
+    // Lógica do Pan (Arrastar)
+    handleMouseDown(e) {
+        // Verifica se é o botão esquerdo (button 0)
+        // E se clicamos no fundo (não em um elemento futuro ou UI)
+        if (e.button === 0 && (e.target === this.viewport || e.target === this.world)) {
+            this.state.isPanning = true;
+            // Guarda onde o mouse estava quando começamos a arrastar
+            this.state.startX = e.clientX - this.state.x;
+            this.state.startY = e.clientY - this.state.y;
+            this.viewport.style.cursor = 'grabbing';
+        }
+        
+        // Placeholder para o clique com botão direito (future menu)
+        if (e.button === 2) {
+            console.log("Botão direito clicado. (Reservado para Menu de Contexto)");
+            // Aqui abriremos o menu flutuante no futuro
+        }
     },
 
-    // Eventos Básicos (Resumido para caber aqui, mas inclui a lógica da rodinha e drag)
-    setupEvents: function() {
-        // Toggle Menu +
-        document.getElementById('add-button').addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('add-menu').classList.toggle('hidden');
-        });
-
-        // Pan e Zoom (Lógica padrão v2.4)
-        this.viewport.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = -Math.sign(e.deltaY);
-            const zoomFactor = 1 + (delta * 0.1);
-            this.state.scale = Math.max(0.1, Math.min(5, this.state.scale * zoomFactor));
-            this.updateTransform();
-        }, {passive:false});
-
-        this.viewport.addEventListener('mousedown', (e) => {
-            if(e.button === 1) { // Rodinha
-                e.preventDefault();
-                this.state.isDraggingSpace = true;
-                this.state.startX = e.clientX - this.state.panX;
-                this.state.startY = e.clientY - this.state.panY;
-                this.viewport.style.cursor = 'grabbing';
-            }
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if(this.state.isDraggingSpace) {
-                e.preventDefault();
-                this.state.panX = e.clientX - this.state.startX;
-                this.state.panY = e.clientY - this.state.startY;
-                this.updateTransform();
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            this.state.isDraggingSpace = false;
-            this.viewport.style.cursor = 'default';
-        });
+    handleMouseMove(e) {
+        if (!this.state.isPanning) return;
+        e.preventDefault();
+        
+        // Atualiza a posição do mundo baseado no movimento do mouse
+        this.state.x = e.clientX - this.state.startX;
+        this.state.y = e.clientY - this.state.startY;
+        
+        this.updateTransform();
     },
 
-    handleElementDrag: function(e, data) {
-        if(e.button !== 0) return;
-        e.stopPropagation();
-        const startX = e.clientX; const startY = e.clientY;
-        const initialX = data.x; const initialY = data.y;
-
-        const move = (ev) => {
-            const dx = (ev.clientX - startX) / this.state.scale;
-            const dy = (ev.clientY - startY) / this.state.scale;
-            data.x = initialX + dx;
-            data.y = initialY + dy;
-            const el = document.getElementById(data.id);
-            if(el) { el.style.left = data.x+'px'; el.style.top = data.y+'px'; }
-        };
-        const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
-        window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+    handleMouseUp() {
+        if (this.state.isPanning) {
+            this.state.isPanning = false;
+            this.viewport.style.cursor = 'grab';
+        }
     },
-    
-    updateBreadcrumbs: function() {
-        document.getElementById('breadcrumb-text').innerText = this.state.currentParentId === 'root' ? 'Workspace' : 'Workspace / ... / ' + this.state.elements[this.state.currentParentId].name;
+
+    // Aplica os cálculos matemáticos ao CSS
+    updateTransform() {
+        // Usamos translate3d para melhor performance (aceleração de hardware)
+        this.world.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${this.state.scale})`;
     }
 };
 
-// Inicia o Core quando a página carregar
-document.addEventListener('DOMContentLoaded', () => Core.init());
+// Liga o motor
+Brain.init();
