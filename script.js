@@ -338,10 +338,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Precisamos expor o goToLayer globalmente para o HTML onclick funcionar
     window.goToLayer = goToLayer;
 
-    registerPlugin('📝', 'Criar Nota', () => spawnCardAtCenter(`<h2 contenteditable="true">Nota</h2><p contenteditable="true">Escreva...</p>`));
-    registerPlugin('📁', 'Novo Projeto', () => spawnCardAtCenter(`<h2 contenteditable="true" style="color:#bb86fc">Projeto</h2><p>Duplo Clique</p>`));
+    // --- API DE PLUGINS (EXPONDO PARA O MUNDO) ---
 
-    // Inicializa
+    // 1. Expose a função de criar cards para outros arquivos
+    window.spawnCardAtCenter = function(contentHTML) {
+        const centerX = ((window.innerWidth - 60) / 2 - state.x) / state.scale;
+        const centerY = ((window.innerHeight) / 2 - state.y) / state.scale;
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.id = 'card-' + Date.now() + Math.random().toString(16).slice(2); 
+        el.setAttribute('data-x', centerX);
+        el.setAttribute('data-y', centerY);
+        el.style.transform = `translate(${centerX}px, ${centerY}px)`;
+        el.innerHTML = contentHTML;
+        world.appendChild(el);
+        return el; // Retorna o elemento criado caso o plugin queira mexer nele
+    };
+
+    // 2. Expose a função de registrar botão na sidebar
+    window.registerPlugin = function(icon, tooltip, action) {
+        const btn = document.createElement('button');
+        btn.className = 'tool-btn';
+        btn.innerHTML = icon;
+        btn.title = tooltip;
+        btn.onclick = (e) => { e.stopPropagation(); action(); };
+        sidebar.appendChild(btn);
+    };
+
+    // Inicializa o Canvas
     draw();
 
-});
+}); // Fim do DOMContentLoaded
