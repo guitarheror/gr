@@ -5,20 +5,27 @@ let isPanning = false;
 let startX = 0;
 let startY = 0;
 
-let translateX = -25;
-let translateY = -25;
+let translateX = 0;
+let translateY = 0;
 let scale = 1;
+
+function updateGrid() {
+  const gridSize = 32 * scale;
+  viewport.style.backgroundSize = `${gridSize}px ${gridSize}px`;
+  viewport.style.backgroundPosition = `${translateX}px ${translateY}px`;
+}
 
 function applyTransform() {
   canvas.style.transform = `
-    translate(${translateX}%, ${translateY}%)
+    translate(${translateX}px, ${translateY}px)
     scale(${scale})
   `;
+  updateGrid();
 }
 
 applyTransform();
 
-// Botão esquerdo — pan
+// PAN — botão esquerdo
 viewport.addEventListener("mousedown", (e) => {
   if (e.button !== 0) return;
   isPanning = true;
@@ -26,15 +33,14 @@ viewport.addEventListener("mousedown", (e) => {
   startY = e.clientY;
 });
 
-// Movimento
 window.addEventListener("mousemove", (e) => {
   if (!isPanning) return;
 
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
 
-  translateX += dx * 0.05;
-  translateY += dy * 0.05;
+  translateX += dx;
+  translateY += dy;
 
   startX = e.clientX;
   startY = e.clientY;
@@ -46,7 +52,7 @@ window.addEventListener("mouseup", () => {
   isPanning = false;
 });
 
-// Zoom — scroll
+// ZOOM — scroll
 viewport.addEventListener("wheel", (e) => {
   e.preventDefault();
 
@@ -57,7 +63,7 @@ viewport.addEventListener("wheel", (e) => {
   applyTransform();
 }, { passive: false });
 
-// Botão direito — desativado por enquanto
+// Botão direito — desativado
 viewport.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
