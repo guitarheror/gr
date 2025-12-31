@@ -275,7 +275,26 @@ document.addEventListener('DOMContentLoaded', () => {
             hideContextMenu();
         }
     });
+    // --- FUNÇÃO DELETAR ---
+    function deleteCard(id) {
+        const card = document.getElementById(id);
+        if (!card) return;
 
+        // 1. Remove as linhas visuais (SVG) associadas
+        const linesToRemove = currentConnections.filter(conn => conn.from === id || conn.to === id);
+        linesToRemove.forEach(conn => {
+            conn.line.remove(); // Remove do HTML
+        });
+
+        // 2. Limpa a memória das conexões
+        currentConnections = currentConnections.filter(conn => conn.from !== id && conn.to !== id);
+
+        // 3. Remove o Card da tela
+        card.remove();
+
+        // 4. Fecha o menu
+        hideContextMenu();
+    }
     function showContextMenu(x, y, isCard) {
         contextMenu.style.display = 'block';
         contextMenu.style.left = x + 'px';
@@ -369,3 +388,4 @@ document.addEventListener('DOMContentLoaded', () => {
     draw();
 
 }); // Fim do DOMContentLoaded
+
