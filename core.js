@@ -1,5 +1,4 @@
 const viewport = document.getElementById("viewport");
-const canvas = document.getElementById("canvas");
 
 let isPanning = false;
 let startX = 0;
@@ -9,33 +8,31 @@ let translateX = 0;
 let translateY = 0;
 let scale = 1;
 
-const BASE_GRID_SIZE = 32;
+const BASE_GRID = 32;
 
 function updateGrid() {
-  const size = BASE_GRID_SIZE * scale;
+  const size = BASE_GRID * scale;
   viewport.style.backgroundSize = `${size}px ${size}px`;
   viewport.style.backgroundPosition = `${translateX}px ${translateY}px`;
 }
 
 function applyTransform() {
-  canvas.style.transform = `
-    translate(${translateX}px, ${translateY}px)
-    scale(${scale})
-  `;
   updateGrid();
 }
 
 applyTransform();
 
-// PAN
-viewport.addEventListener("mousedown", (e) => {
+/* POINTER EVENTS — padrão profissional */
+viewport.addEventListener("pointerdown", (e) => {
   if (e.button !== 0) return;
+
+  viewport.setPointerCapture(e.pointerId);
   isPanning = true;
   startX = e.clientX;
   startY = e.clientY;
 });
 
-window.addEventListener("mousemove", (e) => {
+viewport.addEventListener("pointermove", (e) => {
   if (!isPanning) return;
 
   const dx = e.clientX - startX;
@@ -50,11 +47,15 @@ window.addEventListener("mousemove", (e) => {
   applyTransform();
 });
 
-window.addEventListener("mouseup", () => {
+viewport.addEventListener("pointerup", () => {
   isPanning = false;
 });
 
-// ZOOM
+viewport.addEventListener("pointerleave", () => {
+  isPanning = false;
+});
+
+/* ZOOM */
 viewport.addEventListener(
   "wheel",
   (e) => {
@@ -69,7 +70,7 @@ viewport.addEventListener(
   { passive: false }
 );
 
-// CONTEXT MENU (desativado)
+/* BOTÃO DIREITO — DESATIVADO */
 viewport.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
