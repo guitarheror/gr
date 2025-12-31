@@ -1,4 +1,3 @@
-// Configuração do Tailwind
 tailwind.config = {
     darkMode: "class",
     theme: {
@@ -13,12 +12,7 @@ tailwind.config = {
             fontFamily: {
                 "display": ["Spline Sans", "sans-serif"]
             },
-            borderRadius: {
-                "DEFAULT": "0.25rem", 
-                "lg": "0.5rem", 
-                "xl": "0.75rem", 
-                "full": "9999px"
-            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
         },
     },
 }
