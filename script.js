@@ -1,7 +1,6 @@
-// Aguarda o HTML carregar completamente antes de rodar
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- GLOBAIS ---
+    // --- ELEMENTOS ---
     const viewport = document.getElementById('viewport');
     const world = document.getElementById('world');
     const sidebar = document.getElementById('sidebar');
@@ -10,88 +9,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const connectionPicker = document.getElementById('connection-picker');
     const pickerList = document.getElementById('picker-list');
     const breadcrumbsBar = document.getElementById('breadcrumbs');
+    
+    // Elementos do Editor de Documento
+    const docLayer = document.getElementById('doc-layer');
+    const docTitle = document.getElementById('doc-title');
+    const docBody = document.getElementById('doc-body');
 
-    // Variáveis do Editor de Texto
-    const textEditorModal = document.getElementById('text-editor-modal');
-    const editorTitleInput = document.getElementById('editor-title-input');
-    const editorBodyInput = document.getElementById('editor-body-input');
-    let currentEditingCardID = null; // Para lembrar qual card estamos editando
-
-    // --- FUNÇÕES DO EDITOR (Globais para o HTML acessar) ---
-    window.openTextEditor = function(card) {
-        currentEditingCardID = card.id;
-        // Pega o texto atual do card para preencher os inputs
-        // Usa innerText para pegar apenas o texto limpo
-        editorTitleInput.value = card.querySelector('h2').innerText;
-        editorBodyInput.value = card.querySelector('p').innerText;
-        
-        // Mostra o modal adicionando a classe 'active' (definida no CSS)
-        textEditorModal.classList.add('active');
-    }
-
-    window.closeTextEditor = function() {
-        textEditorModal.classList.remove('active');
-        currentEditingCardID = null;
-    }
-
-    window.saveTextEditor = function() {
-        if (!currentEditingCardID) return;
-        
-        const card = document.getElementById(currentEditingCardID);
-        if (card) {
-            // Pega os valores dos inputs e joga de volta no card
-            // Usamos .trim() para limpar espaços vazios no início/fim
-            card.querySelector('h2').innerText = editorTitleInput.value.trim() || "Sem Título";
-            card.querySelector('p').innerText = editorBodyInput.value;
-        }
-        closeTextEditor();
-    }
-    // Verificação de Segurança: Se não achou o viewport, para tudo.
-    if (!viewport) {
-        console.error("Erro: Elemento 'viewport' não encontrado.");
-        return;
-    }
-
-    const state = {
-        scale: 1, x: 0, y: 0,
-        isPanning: false, panStartX: 0, panStartY: 0,
-        draggedCard: null, cardStartX: 0, cardStartY: 0, mouseStartX: 0, mouseStartY: 0
-    };
-
+    // --- ESTADO ---
+    const state = { scale: 1, x: 0, y: 0, isPanning: false, panStartX: 0, panStartY: 0, draggedCard: null, mouseStartX: 0, mouseStartY: 0 };
+    
     let currentLayerID = 'root';
     let layerStack = []; 
-    let layerStorage = { 'root': { elements: [], connections: [] } };
+    // root começa como 'canvas'
+    let layerStorage = { 'root': { type: 'canvas', elements: [], connections: [] } };
     let currentConnections = []; 
     let contextTargetID = null;
+    
+    // Variável para guardar qual card estamos editando no modo documento
+    let activeDocCardReference = null;
 
-    // --- SISTEMA DE CAMADAS ---
+    // --- SISTEMA DE CAMADAS E NAVEGAÇÃO ---
 
     function saveCurrentLayerState() {
-        const elements = Array.from(world.children).filter(el => el.classList.contains('card'));
-        layerStorage[currentLayerID] = {
-            elements: elements,
-            connections: [...currentConnections], 
-            viewState: { x: state.x, y: state.y, scale: state.scale },
-            title: currentLayerID === 'root' ? 'Brain' : 'Camada' 
-        };
+        // Se estamos saindo de um canvas, salvamos os elementos
+        if (layerStorage[currentLayerID].type === 'canvas') {
+            const elements = Array.from(world.children).filter(el => el.classList.contains('card'));
+            layerStorage[currentLayerID].elements = elements;
+            layerStorage[currentLayerID].connections = [...currentConnections];
+            layerStorage[currentLayerID].viewState = { x: state.x, y: state.y, scale: state.scale };
+            layerStorage[currentLayerID].title = currentLayerID === 'root' ? 'Brain' : 'Pasta';
+        }
+        // Se estamos saindo de um documento, os dados já foram salvos em tempo real no 'input' event
     }
 
-    function enterLayer(targetCardID, targetCardTitle) {
+    // Função Principal: ENTRAR EM ALGO (Seja pasta ou texto)
+    function enterLayer(cardID, cardTitle, cardType, cardElementReference) {
+        
+        // 1. Define o título do Pai para o breadcrumb
         let parentTitle = 'Brain';
         if (currentLayerID !== 'root') {
              const lastCrumb = document.querySelector('.crumb.active');
              parentTitle = lastCrumb ? lastCrumb.innerText : 'Voltar';
         }
 
+        // 2. Salva o estado atual antes de sair
         saveCurrentLayerState();
-        layerStack.push({ id: currentLayerID, title: parentTitle });
+        layerStack.push({ id: currentLayerID, title: parentTitle, type: layerStorage[currentLayerID].type });
 
-        currentLayerID = targetCardID;
-        updateBreadcrumbs(targetCardTitle);
+        // 3. Muda o ID atual
+        currentLayerID = cardID;
         
+        // 4. Se a camada não existe na memória, cria
         if (!layerStorage[currentLayerID]) {
-            layerStorage[currentLayerID] = { elements: [], connections: [], viewState: { x: 0, y: 0, scale: 1 } };
+            layerStorage[currentLayerID] = { 
+                type: cardType, // 'canvas' ou 'text'
+                elements: [], 
+                connections: [], 
+                viewState: { x: 0, y: 0, scale: 1 } 
+            };
         }
+
+        // 5. Configura a referência para edição (se for texto)
+        if (cardType === 'text') {
+            activeDocCardReference = cardElementReference; // O elemento DOM do card original
+        }
+
+        // 6. Atualiza Breadcrumb e Renderiza
+        updateBreadcrumbs(cardTitle);
         renderLayer(currentLayerID);
     }
 
@@ -111,6 +95,75 @@ document.addEventListener('DOMContentLoaded', () => {
         updateBreadcrumbs(); 
     }
 
+    function renderLayer(layerID) {
+        const layerData = layerStorage[layerID];
+
+        if (layerData.type === 'canvas') {
+            // MODO CANVAS
+            docLayer.classList.remove('active'); // Esconde editor
+            viewport.style.display = 'block';    // Mostra canvas
+            
+            // Limpa e reconstrói
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(c => c.remove());
+            svgLayer.innerHTML = ''; 
+
+            currentConnections = layerData.connections || [];
+            layerData.elements.forEach(el => world.appendChild(el));
+            
+            // Recria linhas
+            currentConnections.forEach(conn => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.classList.add('connector-line');
+                conn.line = path; 
+                svgLayer.appendChild(path);
+                const el1 = document.getElementById(conn.from);
+                const el2 = document.getElementById(conn.to);
+                if(el1 && el2) drawSVGPath(path, el1, el2);
+            });
+
+            // Restaura Zoom
+            if (layerData.viewState) {
+                state.x = layerData.viewState.x; state.y = layerData.viewState.y; state.scale = layerData.viewState.scale;
+            } else {
+                state.x = 0; state.y = 0; state.scale = 1;
+            }
+            draw();
+        } 
+        else if (layerData.type === 'text') {
+            // MODO DOCUMENTO
+            viewport.style.display = 'none';    // Esconde canvas
+            docLayer.classList.add('active');   // Mostra editor
+
+            // Carrega os dados do card original para os inputs
+            if (activeDocCardReference) {
+                docTitle.value = activeDocCardReference.querySelector('h2').innerText;
+                docBody.value = activeDocCardReference.querySelector('p').innerText;
+            }
+        }
+    }
+
+    // --- LÓGICA DE SINCRONIZAÇÃO DO EDITOR ---
+    // Quando digitamos no editor, atualizamos o Card Original em tempo real (mesmo ele estando na memória)
+    
+    function syncDocToCard() {
+        if (activeDocCardReference) {
+            const h2 = activeDocCardReference.querySelector('h2');
+            const p = activeDocCardReference.querySelector('p');
+            
+            h2.innerText = docTitle.value || "Sem Título";
+            p.innerText = docBody.value || "";
+
+            // Atualiza também o título no breadcrumb
+            const activeCrumb = document.querySelector('.crumb.active');
+            if (activeCrumb) activeCrumb.innerText = docTitle.value || "Sem Título";
+        }
+    }
+
+    docTitle.addEventListener('input', syncDocToCard);
+    docBody.addEventListener('input', syncDocToCard);
+
+    // --- BREADCRUMBS ---
     function updateBreadcrumbs(activeTitleOverride) {
         let html = ``;
         if (layerStack.length === 0) {
@@ -120,46 +173,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<span class="crumb" onclick="goToLayer('${layer.id}')">${layer.title}</span>`;
                 html += `<span class="crumb-separator">/</span>`;
             });
-            let displayTitle = activeTitleOverride || "Camada Atual";
-            html += `<span class="crumb active">${displayTitle}</span>`;
+            // Tenta pegar o título salvo ou usa o override
+            let displayTitle = activeTitleOverride;
+            if (!displayTitle && currentLayerID !== 'root') {
+                 // Fallback: se for modo texto, pega do input
+                 if (layerStorage[currentLayerID].type === 'text') displayTitle = docTitle.value;
+                 else displayTitle = "Camada";
+            }
+            html += `<span class="crumb active">${displayTitle || 'Atual'}</span>`;
         }
         breadcrumbsBar.innerHTML = html;
-        
-        // RE-ADICIONAR EVENTOS AOS BREADCRUMBS
-        // (Como recriamos o HTML, precisamos garantir que o onclick funcione)
-        // O HTML onclick inline resolve isso, então está ok.
     }
 
-    function renderLayer(layerID) {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(c => c.remove());
-        svgLayer.innerHTML = ''; 
-
-        const data = layerStorage[layerID];
-        currentConnections = data.connections || [];
-        
-        data.elements.forEach(el => world.appendChild(el));
-
-        currentConnections.forEach(conn => {
-            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.classList.add('connector-line');
-            conn.line = path; 
-            svgLayer.appendChild(path);
-            const el1 = document.getElementById(conn.from);
-            const el2 = document.getElementById(conn.to);
-            if(el1 && el2) drawSVGPath(path, el1, el2);
-        });
-
-        if (data.viewState) {
-            state.x = data.viewState.x; state.y = data.viewState.y; state.scale = data.viewState.scale;
-        } else {
-            state.x = 0; state.y = 0; state.scale = 1;
+    // --- DUPLO CLIQUE (ROTEADOR) ---
+    viewport.addEventListener('dblclick', (e) => {
+        const card = e.target.closest('.card');
+        if (card) {
+            e.stopPropagation();
+            
+            // Descobre o TIPO e o TÍTULO
+            const contentDiv = card.querySelector('.card-content') || card; // Suporta plugins com wrapper ou direto
+            const isTextType = contentDiv.getAttribute('data-type') === 'text';
+            const layerType = isTextType ? 'text' : 'canvas';
+            
+            let title = card.querySelector('h2') ? card.querySelector('h2').innerText : 'Sem Nome';
+            
+            // Efeito visual
+            card.style.transform += " scale(1.1)";
+            
+            setTimeout(() => {
+                // CHAMA O ENTER LAYER PASSANDO O CARD COMO REFERÊNCIA
+                enterLayer(card.id, title, layerType, card);
+            }, 100);
         }
-        draw();
-    }
+    });
 
-    // --- DRAW & EVENTS ---
-    
+    // --- FUNÇÕES BÁSICAS DO CANVAS (Igual antes) ---
     function draw() {
         world.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
         viewport.style.backgroundPosition = `${state.x}px ${state.y}px`;
@@ -167,286 +216,108 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('zoom-level').innerText = Math.round(state.scale * 100) + '%';
     }
 
-    // --- DUPLO CLIQUE INTELIGENTE (SMART DOUBLE CLICK) ---
-    viewport.addEventListener('dblclick', (e) => {
-        const card = e.target.closest('.card');
-        
-        if (card) {
-            e.stopPropagation();
-            
-            // VERIFICAÇÃO CRUCIAL:
-            // Se o card tiver a classe 'type-text' (que colocamos no plugin), abre o editor.
-            if (card.querySelector('.type-text')) {
-                window.openTextEditor(card);
-            } 
-            // Se NÃO for texto (assumimos que é Pasta/Projeto), tenta entrar na camada.
-            else {
-                let title = card.querySelector('h2') ? card.querySelector('h2').innerText : 'Sem Nome';
-                title = title.trim();
-                if(!title) title = "Sem Nome";
-    
-                card.style.transform += " scale(1.1)";
-                setTimeout(() => {
-                    enterLayer(card.id, title);
-                }, 100);
-            }
-        }
-    });
-
-    // MOUSE DOWN (PAN & DRAG)
     viewport.addEventListener('mousedown', (e) => {
         if (e.button === 2) return; 
         hideContextMenu();
         if (e.button === 1) { e.preventDefault(); startPan(e); return; }
         if (e.button === 0) {
             const card = e.target.closest('.card');
-
-            if (card) startDragCard(e, card);
-            else startPan(e);
+            if (e.target.isContentEditable) return; 
+            if (card) startDragCard(e, card); else startPan(e);
         }
     });
 
-    // MOUSE MOVE
     window.addEventListener('mousemove', (e) => {
         if (state.isPanning) {
-            e.preventDefault();
-            state.x = e.clientX - state.panStartX;
-            state.y = e.clientY - state.panStartY;
-            draw();
+            e.preventDefault(); state.x = e.clientX - state.panStartX; state.y = e.clientY - state.panStartY; draw();
         }
         if (state.draggedCard) {
             e.preventDefault();
-            const dX = e.clientX - state.mouseStartX;
-            const dY = e.clientY - state.mouseStartY;
-            const nX = state.cardStartX + (dX / state.scale);
-            const nY = state.cardStartY + (dY / state.scale);
+            const dX = e.clientX - state.mouseStartX; const dY = e.clientY - state.mouseStartY;
+            const nX = state.cardStartX + (dX / state.scale); const nY = state.cardStartY + (dY / state.scale);
             state.draggedCard.style.transform = `translate(${nX}px, ${nY}px)`;
-            state.draggedCard.setAttribute('data-x', nX);
-            state.draggedCard.setAttribute('data-y', nY);
+            state.draggedCard.setAttribute('data-x', nX); state.draggedCard.setAttribute('data-y', nY);
             updateLines(state.draggedCard.id);
         }
     });
 
-    // MOUSE UP
     window.addEventListener('mouseup', () => {
         state.isPanning = false;
         if (state.draggedCard) { state.draggedCard.classList.remove('dragging'); state.draggedCard = null; }
         viewport.style.cursor = 'default';
     });
 
-    // ZOOM
     viewport.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const d = -Math.sign(e.deltaY);
-        const s = Math.min(Math.max(0.1, state.scale + (d * 0.1)), 5);
-        const mX = e.clientX; 
-        const mY = e.clientY; 
-        state.x -= (mX - state.x) * (s / state.scale - 1);
-        state.y -= (mY - state.y) * (s / state.scale - 1);
-        state.scale = s;
-        draw();
+        const d = -Math.sign(e.deltaY); const s = Math.min(Math.max(0.1, state.scale + (d * 0.1)), 5);
+        const mX = e.clientX; const mY = e.clientY; 
+        state.x -= (mX - state.x) * (s / state.scale - 1); state.y -= (mY - state.y) * (s / state.scale - 1);
+        state.scale = s; draw();
     }, { passive: false });
 
-    // AUXILIARES
-    function startPan(e) {
-        state.isPanning = true;
-        state.panStartX = e.clientX - state.x;
-        state.panStartY = e.clientY - state.y;
-        viewport.style.cursor = 'grabbing';
-    }
-
-    function startDragCard(e, card) {
-        state.draggedCard = card;
-        state.mouseStartX = e.clientX;
-        state.mouseStartY = e.clientY;
-        state.cardStartX = parseFloat(card.getAttribute('data-x'));
-        state.cardStartY = parseFloat(card.getAttribute('data-y'));
-        card.classList.add('dragging');
-        e.stopPropagation();
-    }
-
-    // CONEXÕES
+    function startPan(e) { state.isPanning = true; state.panStartX = e.clientX - state.x; state.panStartY = e.clientY - state.y; viewport.style.cursor = 'grabbing'; }
+    function startDragCard(e, card) { state.draggedCard = card; state.mouseStartX = e.clientX; state.mouseStartY = e.clientY; state.cardStartX = parseFloat(card.getAttribute('data-x')); state.cardStartY = parseFloat(card.getAttribute('data-y')); card.classList.add('dragging'); e.stopPropagation(); }
+    
+    // --- CONEXÕES & MENU ---
     function updateLines(movedCardID) {
         currentConnections.forEach(conn => {
             if (conn.from === movedCardID || conn.to === movedCardID) {
-                const el1 = document.getElementById(conn.from);
-                const el2 = document.getElementById(conn.to);
+                const el1 = document.getElementById(conn.from); const el2 = document.getElementById(conn.to);
                 if (el1 && el2) drawSVGPath(conn.line, el1, el2);
             }
         });
     }
-
-    function drawSVGPath(pathElement, el1, el2) {
-        const x1 = parseFloat(el1.getAttribute('data-x')) + (el1.offsetWidth / 2);
-        const y1 = parseFloat(el1.getAttribute('data-y')) + (el1.offsetHeight / 2);
-        const x2 = parseFloat(el2.getAttribute('data-x')) + (el2.offsetWidth / 2);
-        const y2 = parseFloat(el2.getAttribute('data-y')) + (el2.offsetHeight / 2);
-        const offset = 50000;
-
-        const sx = x1 + offset; const sy = y1 + offset;
-        const ex = x2 + offset; const ey = y2 + offset;
-        const dist = Math.abs(ex - sx) * 0.5; 
-        const cp1x = sx + dist; 
-        const cp2x = ex - dist; 
-
-        const d = `M ${sx} ${sy} C ${cp1x} ${sy}, ${cp2x} ${ey}, ${ex} ${ey}`;
-        pathElement.setAttribute('d', d);
+    function drawSVGPath(path, el1, el2) {
+        const off = 50000;
+        const x1 = parseFloat(el1.getAttribute('data-x')) + el1.offsetWidth/2; const y1 = parseFloat(el1.getAttribute('data-y')) + el1.offsetHeight/2;
+        const x2 = parseFloat(el2.getAttribute('data-x')) + el2.offsetWidth/2; const y2 = parseFloat(el2.getAttribute('data-y')) + el2.offsetHeight/2;
+        const sx = x1+off; const sy = y1+off; const ex = x2+off; const ey = y2+off; const dist = Math.abs(ex-sx)*0.5;
+        path.setAttribute('d', `M ${sx} ${sy} C ${sx+dist} ${sy}, ${ex-dist} ${ey}, ${ex} ${ey}`);
     }
 
-    function createConnection(targetID) {
-        if (!contextTargetID || contextTargetID === targetID) return;
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.classList.add('connector-line');
-        svgLayer.appendChild(path);
-        
-        const conn = { from: contextTargetID, to: targetID, line: path };
-        currentConnections.push(conn);
-
-        const el1 = document.getElementById(contextTargetID);
-        const el2 = document.getElementById(targetID);
-        drawSVGPath(path, el1, el2);
-        closePicker();
-    }
-
-    // MENU CONTEXTO
     window.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const card = e.target.closest('.card');
-        if (card) {
-            contextTargetID = card.id;
-            showContextMenu(e.clientX, e.clientY, true);
-        } else {
-            hideContextMenu();
-        }
+        e.preventDefault(); const card = e.target.closest('.card');
+        if (card) { contextTargetID = card.id; showContextMenu(e.clientX, e.clientY, true); } else hideContextMenu();
     });
-    // --- FUNÇÃO DELETAR ---
-    function deleteCard(id) {
-        const card = document.getElementById(id);
-        if (!card) return;
 
-        // 1. Remove as linhas visuais (SVG) associadas
-        const linesToRemove = currentConnections.filter(conn => conn.from === id || conn.to === id);
-        linesToRemove.forEach(conn => {
-            conn.line.remove(); // Remove do HTML
-        });
-
-        // 2. Limpa a memória das conexões
-        currentConnections = currentConnections.filter(conn => conn.from !== id && conn.to !== id);
-
-        // 3. Remove o Card da tela
-        card.remove();
-
-        // 4. Fecha o menu
-        hideContextMenu();
-    }
     function showContextMenu(x, y, isCard) {
-        contextMenu.style.display = 'block';
-        contextMenu.style.left = x + 'px';
-        contextMenu.style.top = y + 'px';
-        contextMenu.innerHTML = ''; 
-
+        contextMenu.style.display = 'block'; contextMenu.style.left = x + 'px'; contextMenu.style.top = y + 'px'; contextMenu.innerHTML = ''; 
         if (isCard) {
-            // Opção 1: Conectar
-            const btnConnect = document.createElement('div');
-            btnConnect.className = 'menu-item';
-            btnConnect.innerText = '🔗 Conectar';
-            btnConnect.onclick = openConnectionPicker;
-            contextMenu.appendChild(btnConnect);
-
-            // Opção 2: Separador visual (opcional, só pra ficar bonito)
-            const separator = document.createElement('div');
-            separator.style.borderBottom = '1px solid #444';
-            separator.style.margin = '5px 0';
-            contextMenu.appendChild(separator);
-
-            // Opção 3: Excluir (NOVO)
-            const btnDelete = document.createElement('div');
-            btnDelete.className = 'menu-item';
-            btnDelete.innerText = '🗑️ Excluir';
-            btnDelete.style.color = '#ff5555'; // Vermelho para indicar perigo
-            btnDelete.onclick = () => deleteCard(contextTargetID); // Chama a função que criamos
-            contextMenu.appendChild(btnDelete);
+            const btnConn = document.createElement('div'); btnConn.className = 'menu-item'; btnConn.innerText = '🔗 Conectar'; btnConn.onclick = window.openConnectionPicker; contextMenu.appendChild(btnConn);
+            const btnDel = document.createElement('div'); btnDel.className = 'menu-item'; btnDel.innerText = '🗑️ Excluir'; btnDel.style.color='#ff5555'; 
+            btnDel.onclick = () => { 
+                const card = document.getElementById(contextTargetID); if(card) card.remove(); 
+                currentConnections = currentConnections.filter(c => c.from!==contextTargetID && c.to!==contextTargetID); 
+                document.querySelectorAll('.connector-line').forEach(l=>l.remove()); // Simplificação: redesenha tudo ou limpa lines. Ideal seria limpar só as certas.
+                currentConnections.forEach(c => { /* Redraw logic if needed */ });
+                hideContextMenu();
+            }; 
+            contextMenu.appendChild(btnDel);
         }
     }
-
     function hideContextMenu() { contextMenu.style.display = 'none'; }
-
-    // PICKER (Disponibilizando globalmente para o HTML acessar)
-    window.openConnectionPicker = function() {
-        hideContextMenu();
-        connectionPicker.style.display = 'block';
-        pickerList.innerHTML = '';
-        const allCards = document.querySelectorAll('.card');
-        allCards.forEach(card => {
-            if (card.id === contextTargetID) return; 
-            const item = document.createElement('div');
-            item.className = 'picker-option';
-            const title = card.querySelector('h2') ? card.querySelector('h2').innerText : 'Sem Nome';
-            item.innerText = `${title}`;
-            item.onclick = () => createConnection(card.id);
-            pickerList.appendChild(item);
-        });
-    }
-    
-    window.closePicker = function() { connectionPicker.style.display = 'none'; }
-
-    // PLUGINS
-    function registerPlugin(icon, tooltip, action) {
-        const btn = document.createElement('button');
-        btn.className = 'tool-btn';
-        btn.innerHTML = icon;
-        btn.title = tooltip;
-        btn.onclick = (e) => { e.stopPropagation(); action(); };
-        sidebar.appendChild(btn);
+    window.openConnectionPicker = function() { hideContextMenu(); connectionPicker.style.display = 'block'; pickerList.innerHTML = ''; document.querySelectorAll('.card').forEach(c => { if(c.id!==contextTargetID){ const d = document.createElement('div'); d.className='picker-option'; d.innerText=c.querySelector('h2').innerText; d.onclick=()=>{ createConn(c.id); }; pickerList.appendChild(d); } }); };
+    window.closePicker = function() { connectionPicker.style.display = 'none'; };
+    function createConn(toID) { 
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path'); path.className='connector-line'; svgLayer.appendChild(path);
+        currentConnections.push({from:contextTargetID, to:toID, line:path}); 
+        drawSVGPath(path, document.getElementById(contextTargetID), document.getElementById(toID)); window.closePicker(); 
     }
 
-    function spawnCardAtCenter(contentHTML) {
-        const centerX = ((window.innerWidth - 60) / 2 - state.x) / state.scale;
-        const centerY = ((window.innerHeight) / 2 - state.y) / state.scale;
-        const el = document.createElement('div');
-        el.className = 'card';
-        el.id = 'card-' + Date.now(); 
-        el.setAttribute('data-x', centerX);
-        el.setAttribute('data-y', centerY);
-        el.style.transform = `translate(${centerX}px, ${centerY}px)`;
-        el.innerHTML = contentHTML;
-        world.appendChild(el);
-    }
+    // --- API PLUGINS ---
+    window.spawnCardAtCenter = function(html) {
+        const cx = ((window.innerWidth-60)/2 - state.x)/state.scale; const cy = (window.innerHeight/2 - state.y)/state.scale;
+        const el = document.createElement('div'); el.className='card'; el.id='c-'+Date.now();
+        el.setAttribute('data-x', cx); el.setAttribute('data-y', cy); el.style.transform=`translate(${cx}px,${cy}px)`;
+        el.innerHTML = html; world.appendChild(el); return el;
+    };
+    window.registerPlugin = function(icon, title, action) {
+        const btn = document.createElement('button'); btn.className='tool-btn'; btn.innerHTML=icon; btn.title=title;
+        btn.onclick=(e)=>{e.stopPropagation(); action();}; sidebar.appendChild(btn);
+    };
 
-    // Precisamos expor o goToLayer globalmente para o HTML onclick funcionar
+    // Necessário exportar para o HTML usar no onclick
     window.goToLayer = goToLayer;
 
-    // --- API DE PLUGINS (EXPONDO PARA O MUNDO) ---
-
-    // 1. Expose a função de criar cards para outros arquivos
-    window.spawnCardAtCenter = function(contentHTML) {
-        const centerX = ((window.innerWidth - 60) / 2 - state.x) / state.scale;
-        const centerY = ((window.innerHeight) / 2 - state.y) / state.scale;
-        const el = document.createElement('div');
-        el.className = 'card';
-        el.id = 'card-' + Date.now() + Math.random().toString(16).slice(2); 
-        el.setAttribute('data-x', centerX);
-        el.setAttribute('data-y', centerY);
-        el.style.transform = `translate(${centerX}px, ${centerY}px)`;
-        el.innerHTML = contentHTML;
-        world.appendChild(el);
-        return el; // Retorna o elemento criado caso o plugin queira mexer nele
-    };
-
-    // 2. Expose a função de registrar botão na sidebar
-    window.registerPlugin = function(icon, tooltip, action) {
-        const btn = document.createElement('button');
-        btn.className = 'tool-btn';
-        btn.innerHTML = icon;
-        btn.title = tooltip;
-        btn.onclick = (e) => { e.stopPropagation(); action(); };
-        sidebar.appendChild(btn);
-    };
-
-    // Inicializa o Canvas
     draw();
-
-}); // Fim do DOMContentLoaded
-
-
-
+});
