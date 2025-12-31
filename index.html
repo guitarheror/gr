@@ -1,50 +1,58 @@
 <!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Infinite Canvas Simplified</title>
-    
-    <link href="https://fonts.googleapis.com" rel="preconnect"/>
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script> 
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infinite Canvas</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0df269",
+            "background-dark": "#102217",
+            "surface-darker": "#0b1811",
+          },
+          fontFamily: {
+            display: ["Spline Sans", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-screen selection:bg-primary selection:text-background-dark">
-    
-    <div class="relative h-full w-full flex">
-        <nav class="z-50 flex flex-col justify-start items-center w-20 h-full py-6 bg-surface-darker/90 backdrop-blur-md border-r border-[#316847]">
-            <div class="flex flex-col gap-8 items-center w-full">
-                <div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/50 cursor-pointer hover:border-primary transition-colors" 
-                     data-alt="User profile avatar gradient" 
-                     style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA6ULsTZfmdKbQbE151cmPt-mWcteuUOy5hUjSYw6EnBNsKhui5sMa6Iystl0Umt6YNQ_lE-T84oxKvsHraqlwJNExlEHL80LaSU-dpkxZbhPlnkRJWay6Cc5l0DWR1sGV50-yjAC4AesJAhgtYeugiSnuFktQjnp_TRoFUtnL8ETooP7RpLFTfxnc70Cew7kczA-m18jW3S3RLqBHhnKKiB480y2lv1cVcvd1s8bIlDJEXjlQJ2PJVXF8lPZxAnA2CuLoiDtJUff_U");'></div>
-            </div>
-        </nav>
 
-        <main class="relative flex-1 h-full w-full overflow-hidden bg-background-dark cursor-grab active:cursor-grabbing">
-            <div class="absolute inset-0 bg-dot-pattern opacity-40 pointer-events-none transform scale-100 origin-center"></div>
-            
-            <div class="absolute top-6 left-6 z-40 bg-surface-darker/80 backdrop-blur rounded-full p-3 border border-[#316847] shadow-lg flex items-center justify-center">
-                <a class="text-[#90cba8] hover:text-primary transition-colors flex items-center" href="#">
-                    <span class="material-symbols-outlined text-[20px]">home</span>
-                </a>
-            </div>
+<body class="bg-background-dark font-display text-white overflow-hidden h-screen w-screen">
 
-            <div class="absolute inset-0 top-0 left-0 w-[200%] h-[200%] transform -translate-x-1/4 -translate-y-1/4 origin-center">
-            </div>
+  <div class="relative h-full w-full flex">
 
-            <div class="absolute bottom-8 right-8 z-40 w-48 h-32 bg-surface-darker/90 backdrop-blur border border-[#316847] rounded-lg shadow-xl overflow-hidden hidden md:block">
-                <div class="relative w-full h-full bg-dot-pattern opacity-50">
-                    <div class="absolute top-[25%] left-[25%] w-[50%] h-[50%] border-2 border-primary bg-primary/10 shadow-[0_0_10px_rgba(13,242,105,0.2)] rounded-sm"></div>
-                </div>
-            </div>
-        </main>
-    </div>
+    <nav class="z-50 flex flex-col items-center w-20 h-full py-6 bg-surface-darker/90 backdrop-blur-md border-r border-[#316847]">
+      <div class="size-10 rounded-full bg-gradient-to-br from-green-400 to-yellow-400 border-2 border-primary/50"></div>
+    </nav>
 
+    <main id="viewport" class="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing">
+      
+      <div id="canvas" class="absolute inset-0 transform-origin-center">
+        <div class="absolute inset-0 bg-dot-pattern opacity-40 pointer-events-none"></div>
+      </div>
+
+      <div class="absolute top-6 left-6 z-40 bg-surface-darker/80 backdrop-blur rounded-full p-3 border border-[#316847]">
+        <span class="material-symbols-outlined text-[#90cba8]">home</span>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
