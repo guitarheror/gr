@@ -28,11 +28,19 @@
         <div id="picker-list"></div>
         <button onclick="closePicker()" style="margin-top:10px; width:100%; padding: 5px; cursor: pointer;">Cancelar</button>
     </div>
+    <div id="text-editor-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Editar Card</h3>
+            <input type="text" id="editor-title-input" placeholder="Título do Card">
+            <textarea id="editor-body-input" placeholder="Escreva seu texto aqui..."></textarea>
+            <div class="modal-buttons">
+                <button onclick="closeTextEditor()" class="btn-cancel">Cancelar</button>
+                <button onclick="saveTextEditor()" class="btn-save">Salvar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
-
-    <script src="plugins/texto.js"></script>
-    <script src="plugins/projeto.js"></script>
 
 </body>
 </html>
