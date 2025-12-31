@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Infinito v8: Fluid</title>
+    <title>Canvas Infinito v9: Doc Mode</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,10 +16,17 @@
             <svg id="connections-layer"></svg>
             <div id="card-root" class="card" data-x="300" data-y="200" style="transform: translate(300px, 200px);">
                 <h2 contenteditable="true">Brain (Início)</h2>
-                <p contenteditable="true">Edite este texto e dê duplo clique.</p>
+                <p contenteditable="true">Este é o canvas principal.</p>
             </div>
         </div>
         <div id="hud">Zoom: <span id="zoom-level">100%</span></div>
+    </div>
+
+    <div id="doc-layer">
+        <div class="doc-container">
+            <input type="text" id="doc-title" placeholder="Título do Documento">
+            <textarea id="doc-body" placeholder="Comece a escrever aqui..."></textarea>
+        </div>
     </div>
 
     <div id="context-menu"></div>
@@ -28,19 +35,9 @@
         <div id="picker-list"></div>
         <button onclick="closePicker()" style="margin-top:10px; width:100%; padding: 5px; cursor: pointer;">Cancelar</button>
     </div>
-    <div id="text-editor-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Editar Card</h3>
-            <input type="text" id="editor-title-input" placeholder="Título do Card">
-            <textarea id="editor-body-input" placeholder="Escreva seu texto aqui..."></textarea>
-            <div class="modal-buttons">
-                <button onclick="closeTextEditor()" class="btn-cancel">Cancelar</button>
-                <button onclick="saveTextEditor()" class="btn-save">Salvar</button>
-            </div>
-        </div>
-    </div>
 
     <script src="script.js"></script>
-
+    <script src="plugins/texto.js"></script>
+    <script src="plugins/projeto.js"></script>
 </body>
 </html>
