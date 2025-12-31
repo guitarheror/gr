@@ -302,11 +302,26 @@ document.addEventListener('DOMContentLoaded', () => {
         contextMenu.innerHTML = ''; 
 
         if (isCard) {
+            // Opção 1: Conectar
             const btnConnect = document.createElement('div');
             btnConnect.className = 'menu-item';
             btnConnect.innerText = '🔗 Conectar';
             btnConnect.onclick = openConnectionPicker;
             contextMenu.appendChild(btnConnect);
+
+            // Opção 2: Separador visual (opcional, só pra ficar bonito)
+            const separator = document.createElement('div');
+            separator.style.borderBottom = '1px solid #444';
+            separator.style.margin = '5px 0';
+            contextMenu.appendChild(separator);
+
+            // Opção 3: Excluir (NOVO)
+            const btnDelete = document.createElement('div');
+            btnDelete.className = 'menu-item';
+            btnDelete.innerText = '🗑️ Excluir';
+            btnDelete.style.color = '#ff5555'; // Vermelho para indicar perigo
+            btnDelete.onclick = () => deleteCard(contextTargetID); // Chama a função que criamos
+            contextMenu.appendChild(btnDelete);
         }
     }
 
@@ -388,4 +403,5 @@ document.addEventListener('DOMContentLoaded', () => {
     draw();
 
 }); // Fim do DOMContentLoaded
+
 
