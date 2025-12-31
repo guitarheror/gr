@@ -11,6 +11,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const pickerList = document.getElementById('picker-list');
     const breadcrumbsBar = document.getElementById('breadcrumbs');
 
+    // Variáveis do Editor de Texto
+    const textEditorModal = document.getElementById('text-editor-modal');
+    const editorTitleInput = document.getElementById('editor-title-input');
+    const editorBodyInput = document.getElementById('editor-body-input');
+    let currentEditingCardID = null; // Para lembrar qual card estamos editando
+
+    // --- FUNÇÕES DO EDITOR (Globais para o HTML acessar) ---
+    window.openTextEditor = function(card) {
+        currentEditingCardID = card.id;
+        // Pega o texto atual do card para preencher os inputs
+        // Usa innerText para pegar apenas o texto limpo
+        editorTitleInput.value = card.querySelector('h2').innerText;
+        editorBodyInput.value = card.querySelector('p').innerText;
+        
+        // Mostra o modal adicionando a classe 'active' (definida no CSS)
+        textEditorModal.classList.add('active');
+    }
+
+    window.closeTextEditor = function() {
+        textEditorModal.classList.remove('active');
+        currentEditingCardID = null;
+    }
+
+    window.saveTextEditor = function() {
+        if (!currentEditingCardID) return;
+        
+        const card = document.getElementById(currentEditingCardID);
+        if (card) {
+            // Pega os valores dos inputs e joga de volta no card
+            // Usamos .trim() para limpar espaços vazios no início/fim
+            card.querySelector('h2').innerText = editorTitleInput.value.trim() || "Sem Título";
+            card.querySelector('p').innerText = editorBodyInput.value;
+        }
+        closeTextEditor();
+    }
     // Verificação de Segurança: Se não achou o viewport, para tudo.
     if (!viewport) {
         console.error("Erro: Elemento 'viewport' não encontrado.");
@@ -132,19 +167,29 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('zoom-level').innerText = Math.round(state.scale * 100) + '%';
     }
 
-    // DUPLO CLIQUE (SMART TITLES)
+    // --- DUPLO CLIQUE INTELIGENTE (SMART DOUBLE CLICK) ---
     viewport.addEventListener('dblclick', (e) => {
         const card = e.target.closest('.card');
+        
         if (card) {
             e.stopPropagation();
-            let title = card.querySelector('h2') ? card.querySelector('h2').innerText : 'Sem Nome';
-            title = title.trim();
-            if(!title) title = "Sem Nome";
-
-            card.style.transform += " scale(1.1)";
-            setTimeout(() => {
-                enterLayer(card.id, title);
-            }, 100);
+            
+            // VERIFICAÇÃO CRUCIAL:
+            // Se o card tiver a classe 'type-text' (que colocamos no plugin), abre o editor.
+            if (card.querySelector('.type-text')) {
+                window.openTextEditor(card);
+            } 
+            // Se NÃO for texto (assumimos que é Pasta/Projeto), tenta entrar na camada.
+            else {
+                let title = card.querySelector('h2') ? card.querySelector('h2').innerText : 'Sem Nome';
+                title = title.trim();
+                if(!title) title = "Sem Nome";
+    
+                card.style.transform += " scale(1.1)";
+                setTimeout(() => {
+                    enterLayer(card.id, title);
+                }, 100);
+            }
         }
     });
 
@@ -155,7 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.button === 1) { e.preventDefault(); startPan(e); return; }
         if (e.button === 0) {
             const card = e.target.closest('.card');
-            if (e.target.isContentEditable) return; // Permite editar texto
 
             if (card) startDragCard(e, card);
             else startPan(e);
@@ -403,5 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
     draw();
 
 }); // Fim do DOMContentLoaded
+
 
 
