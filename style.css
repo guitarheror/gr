@@ -1,203 +1,21 @@
-:root {
-    --bg-color: #050d0a;       /* Fundo muito escuro */
-    --dot-color: #1c3329;      /* Cor dos pontos do grid */
-    --ui-bg: #0d1a16;          /* Fundo dos elementos de UI */
-    --accent: #2d5e45;         /* Verde destaque (botões/icones) */
-    --text-color: #8dafa0;     /* Texto claro esverdeado */
-    --border-ui: #1e3a2f;      /* Bordas sutis */
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    user-select: none; /* Impede seleção de texto ao arrastar */
+::-webkit-scrollbar-track {
+    background: #102217; 
 }
-
-body {
-    background-color: var(--bg-color);
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden; /* Remove barras de rolagem nativas */
-    font-family: sans-serif;
-    color: var(--text-color);
-}
-
-/* --- UI LAYER --- */
-.ui-layer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Deixa cliques passarem para o world */
-    z-index: 100;
-}
-
-/* Reativa cliques nos elementos de UI */
-.ui-layer > * {
-    pointer-events: auto;
-}
-
-/* Sidebar */
-.sidebar {
-    position: absolute;
-    left: 15px;
-    top: 90px; /* Abaixo do header */
-    width: 50px;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.sidebar-icon {
-    width: 45px;
-    height: 45px;
-    background: #0f241d;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #4cd964; /* Verde brilhante do ícone */
-    border: 1px solid var(--border-ui);
-    cursor: pointer;
-}
-
-/* Top Left Header */
-.top-left-panel {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.user-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); /* Gradiente placeholder */
-    background: radial-gradient(circle at 30% 30%, #e6dada, #d4a373); /* Simulando o da imagem */
-}
-
-.home-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--ui-bg);
-    border: 1px solid var(--border-ui);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.breadcrumbs {
-    background: var(--ui-bg);
-    padding: 8px 16px;
-    border-radius: 20px;
-    border: 1px solid var(--border-ui);
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.arrow {
-    font-size: 10px;
-    opacity: 0.7;
-}
-
-/* Top Right Config */
-.config-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: var(--ui-bg);
-    width: 40px; /* Simplificado como icone por enquanto */
-    height: 40px;
-    border-radius: 8px;
-    border: 1px solid var(--border-ui);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-/* Minimap */
-.minimap-container {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 160px;
-    height: 100px;
-    background: var(--ui-bg);
-    border: 1px solid var(--border-ui);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.minimap-viewport {
-    width: 40px;
-    height: 25px;
-    border: 1px solid #4cd964;
-    position: absolute;
-    top: 50%; /* Centralizado por enquanto (mockup) */
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-/* Context Menu */
-.context-menu {
-    position: absolute;
-    background: #1a2e26;
-    border: 1px solid var(--border-ui);
-    border-radius: 6px;
-    padding: 5px 0;
-    min-width: 150px;
-    display: none; /* Escondido */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-
-.menu-item {
-    padding: 8px 15px;
-    font-size: 13px;
-    cursor: pointer;
-    color: #fff;
-}
-
-.menu-item:hover {
-    background: var(--accent);
-}
-
-/* --- WORLD (Infinite Space) --- */
-.world {
-    width: 100%;
-    height: 100%;
-    transform-origin: 0 0; /* Importante para o zoom funcionar a partir do topo/esq */
-    /* Cria o grid de pontos infinito */
-    background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
-    background-size: 30px 30px; /* Espaçamento dos pontos */
-    background-position: 0 0;
-}
-
-/* Elemento genérico para teste */
-.element {
-    position: absolute;
-    width: 150px;
-    height: 100px;
-    background: rgba(45, 94, 69, 0.3);
-    border: 1px solid #4cd964;
+::-webkit-scrollbar-thumb {
+    background: #183423; 
     border-radius: 4px;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #316847; 
 }
 
-.element:active {
-    cursor: grabbing;
+/* Background Pattern */
+.bg-dot-pattern {
+    background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
+    background-size: 32px 32px;
 }
