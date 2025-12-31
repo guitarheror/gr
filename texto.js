@@ -1,16 +1,11 @@
-// plugins/texto.js
-
 if (window.registerPlugin && window.spawnCardAtCenter) {
     window.registerPlugin('📝', 'Criar Nota', () => {
-        // CRUCIAL: Adicionei a classe 'type-text' na div principal do conteúdo.
-        // Removi 'contenteditable="true"' dos h2 e p.
+        // data-type="text" avisa o sistema que isso é um documento
         window.spawnCardAtCenter(`
-            <div class="card-content type-text">
-                <h2>Título da Nota</h2>
-                <p>Duplo clique para abrir o editor...</p>
+            <div class="card-content" data-type="text">
+                <h2>Nova Nota</h2>
+                <p>Duplo clique para escrever...</p>
             </div>
         `);
     });
-} else {
-    console.error("Erro: Core não carregado.");
 }
