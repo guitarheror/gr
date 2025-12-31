@@ -16,6 +16,12 @@
   border-radius: 4px;
 }
 
+#viewport {
+  background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+  background-position: 0 0;
+}
+
 .bg-dot-pattern {
   background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
   background-size: 32px 32px;
@@ -23,18 +29,6 @@
 
 #canvas {
   position: absolute;
-  width: 200%;
-  height: 200%;
-  top: 0;
-  left: 0;
-  transform-origin: center;
-}
-
-.canvas-grid {
-  position: absolute;
   inset: 0;
-  background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
-  background-size: 32px 32px;
-  opacity: 0.4;
-  pointer-events: none;
+  transform-origin: center;
 }
