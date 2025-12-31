@@ -9,11 +9,16 @@ let translateX = -25;
 let translateY = -25;
 let scale = 1;
 
-function updateTransform() {
-  canvas.style.transform = `translate(${translateX}%, ${translateY}%) scale(${scale})`;
+function applyTransform() {
+  canvas.style.transform = `
+    translate(${translateX}%, ${translateY}%)
+    scale(${scale})
+  `;
 }
 
-// PAN — botão esquerdo
+applyTransform();
+
+// Botão esquerdo — pan
 viewport.addEventListener("mousedown", (e) => {
   if (e.button !== 0) return;
   isPanning = true;
@@ -21,6 +26,7 @@ viewport.addEventListener("mousedown", (e) => {
   startY = e.clientY;
 });
 
+// Movimento
 window.addEventListener("mousemove", (e) => {
   if (!isPanning) return;
 
@@ -33,27 +39,25 @@ window.addEventListener("mousemove", (e) => {
   startX = e.clientX;
   startY = e.clientY;
 
-  updateTransform();
+  applyTransform();
 });
 
 window.addEventListener("mouseup", () => {
   isPanning = false;
 });
 
-// ZOOM — rodinha do mouse
+// Zoom — scroll
 viewport.addEventListener("wheel", (e) => {
   e.preventDefault();
 
-  const zoomIntensity = 0.0015;
-  const delta = -e.deltaY * zoomIntensity;
+  const zoomSpeed = 0.0015;
+  const delta = -e.deltaY * zoomSpeed;
 
-  const newScale = Math.min(Math.max(0.2, scale + delta), 3);
-  scale = newScale;
-
-  updateTransform();
+  scale = Math.min(Math.max(0.2, scale + delta), 3);
+  applyTransform();
 }, { passive: false });
 
-// Botão direito — bloqueado por enquanto
+// Botão direito — desativado por enquanto
 viewport.addEventListener("contextmenu", (e) => {
   e.preventDefault();
 });
