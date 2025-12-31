@@ -1,91 +1,129 @@
-const Brain = {
-    state: {
-        scale: 1,
-        x: 0,
-        y: 0,
-        isPanning: false,
-        startX: 0,
-        startY: 0
-    },
+const world = document.getElementById('world');
+const contextMenu = document.getElementById('context-menu');
 
-    viewport: document.getElementById('viewport'),
-    world: document.getElementById('world'),
-
-    init() {
-        this.addEventListeners();
-        // Inicializa centralizado (opcional, ajustei para 0,0 por enquanto)
-        this.updateTransform();
-    },
-
-    addEventListeners() {
-        // Zoom
-        this.viewport.addEventListener('wheel', (e) => this.handleWheel(e), { passive: false });
-        
-        // Pan (Arrastar)
-        this.viewport.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        window.addEventListener('mouseup', () => this.handleMouseUp());
-    },
-
-    handleWheel(e) {
-        e.preventDefault();
-
-        // Pega a posição do mouse relativa ao viewport (desconta a sidebar)
-        const rect = this.viewport.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-
-        // Calcula coordenadas do mundo antes do zoom
-        const worldX = (mouseX - this.state.x) / this.state.scale;
-        const worldY = (mouseY - this.state.y) / this.state.scale;
-
-        // Fator de Zoom
-        const zoomIntensity = 0.001;
-        const zoomFactor = Math.exp(-e.deltaY * zoomIntensity);
-        
-        // Limites de Zoom
-        const newScale = Math.min(Math.max(this.state.scale * zoomFactor, 0.1), 10);
-
-        // Atualiza estado
-        this.state.scale = newScale;
-        this.state.x = mouseX - worldX * newScale;
-        this.state.y = mouseY - worldY * newScale;
-
-        this.updateTransform();
-    },
-
-    handleMouseDown(e) {
-        // Botão Esquerdo (0) ou Meio (1)
-        if (e.button === 0 || e.button === 1) {
-            this.state.isPanning = true;
-            this.state.startX = e.clientX - this.state.x;
-            this.state.startY = e.clientY - this.state.y;
-            this.viewport.style.cursor = 'grabbing';
-        }
-    },
-
-    handleMouseMove(e) {
-        if (!this.state.isPanning) return;
-        e.preventDefault();
-        this.state.x = e.clientX - this.state.startX;
-        this.state.y = e.clientY - this.state.startY;
-        this.updateTransform();
-    },
-
-    handleMouseUp() {
-        this.state.isPanning = false;
-        this.viewport.style.cursor = 'grab';
-    },
-
-    updateTransform() {
-        // Aplica o movimento e zoom
-        this.world.style.transform = `translate3d(${this.state.x}px, ${this.state.y}px, 0) scale(${this.state.scale})`;
-        
-        // Atualiza a posição do background (Grid) para dar sensação de infinito
-        // Isso faz com que os pontos se movam corretamente
-        this.world.style.backgroundPosition = `${this.state.x}px ${this.state.y}px`;
-        this.world.style.backgroundSize = `${32 * this.state.scale}px ${32 * this.state.scale}px`;
-    }
+// Estado do Workspace
+let state = {
+    scale: 1,
+    panning: false,
+    pointX: 0, // Posição X do mundo
+    pointY: 0, // Posição Y do mundo
+    startX: 0,
+    startY: 0
 };
 
-Brain.init();
+// Configurações de Zoom
+const ZOOM_SPEED = 0.1;
+const MAX_SCALE = 5;
+const MIN_SCALE = 0.1;
+
+// --- FUNÇÃO PRINCIPAL DE ATUALIZAÇÃO ---
+function updateTransform() {
+    world.style.transform = `translate(${state.pointX}px, ${state.pointY}px) scale(${state.scale})`;
+    // Atualiza a posição do background para dar a ilusão de infinito perfeito
+    // Se quiser que os pontos fiquem fixos em relação aos elementos, remova a linha abaixo. 
+    // Se quiser que o grid seja o "chão", mantenha o background no world (como está no CSS).
+}
+
+// --- MOUSE WHEEL (ZOOM) ---
+window.addEventListener('wheel', (e) => {
+    e.preventDefault();
+
+    const xs = (e.clientX - state.pointX) / state.scale;
+    const ys = (e.clientY - state.pointY) / state.scale;
+
+    const delta = -Math.sign(e.deltaY);
+    const step = 0.1; // Intensidade do zoom
+    
+    let newScale = state.scale + (delta * step);
+    // Limites de zoom
+    if (newScale > MAX_SCALE) newScale = MAX_SCALE;
+    if (newScale < MIN_SCALE) newScale = MIN_SCALE;
+
+    state.pointX = e.clientX - xs * newScale;
+    state.pointY = e.clientY - ys * newScale;
+    state.scale = newScale;
+
+    updateTransform();
+}, { passive: false });
+
+// --- MOUSE DOWN (INICIAR PAN OU ARRASTAR ELEMENTO) ---
+window.addEventListener('mousedown', (e) => {
+    // Esconde menu de contexto se estiver aberto
+    contextMenu.style.display = 'none';
+
+    // Botão Esquerdo (0)
+    if (e.button === 0) {
+        // Verifica se clicou em um elemento ou no vazio
+        if (e.target.classList.contains('element')) {
+            // Lógica para arrastar elemento (Placeholder para o futuro)
+            // Por enquanto, vamos permitir arrastar o elemento dentro do grid
+            initElementDrag(e, e.target);
+        } else {
+            // Clicou no vazio: Pan (Mover o mundo)
+            state.panning = true;
+            state.startX = e.clientX - state.pointX;
+            state.startY = e.clientY - state.pointY;
+            world.style.cursor = 'grabbing';
+        }
+    }
+});
+
+// --- MOUSE MOVE ---
+window.addEventListener('mousemove', (e) => {
+    if (state.panning) {
+        e.preventDefault();
+        state.pointX = e.clientX - state.startX;
+        state.pointY = e.clientY - state.startY;
+        updateTransform();
+    }
+});
+
+// --- MOUSE UP ---
+window.addEventListener('mouseup', () => {
+    state.panning = false;
+    world.style.cursor = 'default';
+});
+
+// --- RIGHT CLICK (CONTEXT MENU) ---
+window.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    
+    // Posiciona o menu onde o mouse está
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = `${e.clientX}px`;
+    contextMenu.style.top = `${e.clientY}px`;
+
+    // Lógica futura: detectar se clicou num elemento para mostrar opções diferentes
+    if (e.target.classList.contains('element')) {
+        console.log("Menu aberto sobre um elemento");
+    } else {
+        console.log("Menu aberto no workspace");
+    }
+});
+
+// --- FUNÇÃO AUXILIAR: ARRASTAR ELEMENTO (Lógica Básica) ---
+function initElementDrag(e, element) {
+    let startMouseX = e.clientX;
+    let startMouseY = e.clientY;
+    
+    // Pega a posição atual do elemento (top/left)
+    let startElemX = parseInt(element.style.left || 0);
+    let startElemY = parseInt(element.style.top || 0);
+
+    function moveElement(ev) {
+        // Calcula o delta considerando o zoom atual do mundo
+        const deltaX = (ev.clientX - startMouseX) / state.scale;
+        const deltaY = (ev.clientY - startMouseY) / state.scale;
+        
+        element.style.left = `${startElemX + deltaX}px`;
+        element.style.top = `${startElemY + deltaY}px`;
+    }
+
+    function stopElementDrag() {
+        window.removeEventListener('mousemove', moveElement);
+        window.removeEventListener('mouseup', stopElementDrag);
+    }
+
+    window.addEventListener('mousemove', moveElement);
+    window.addEventListener('mouseup', stopElementDrag);
+}
