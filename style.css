@@ -16,15 +16,24 @@
   border-radius: 4px;
 }
 
+/* GRID PRINCIPAL – VISÍVEL */
 #viewport {
-  background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
+  background-color: #102217;
+  background-image: radial-gradient(
+    rgba(13, 242, 105, 0.35) 2px,
+    transparent 2px
+  );
   background-size: 32px 32px;
   background-position: 0 0;
 }
 
+/* GRID DO MINI MAPA */
 .bg-dot-pattern {
-  background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
-  background-size: 32px 32px;
+  background-image: radial-gradient(
+    rgba(13, 242, 105, 0.4) 1.5px,
+    transparent 1.5px
+  );
+  background-size: 16px 16px;
 }
 
 #canvas {
