@@ -1,78 +1,203 @@
-<!DOCTYPE html>
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Infinite Canvas Simplified</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#0df269",
-                        "background-light": "#f5f8f7",
-                        "background-dark": "#102217",
-                        "surface-dark": "#183423",
-                        "surface-darker": "#0b1811",
-                    },
-                    fontFamily: {
-                        "display": ["Spline Sans", "sans-serif"]
-                    },
-                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-                },
-            },
-        }
-    </script>
-<style>::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #102217; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #183423; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #316847; 
-        }.bg-dot-pattern {
-            background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
-            background-size: 32px 32px;
-        }
-    </style>
-</head>
-<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden h-screen w-screen selection:bg-primary selection:text-background-dark">
-<div class="relative h-full w-full flex">
-<nav class="z-50 flex flex-col justify-start items-center w-20 h-full py-6 bg-surface-darker/90 backdrop-blur-md border-r border-[#316847]">
-<div class="flex flex-col gap-8 items-center w-full">
-<div class="size-10 rounded-full bg-cover bg-center border-2 border-primary/50 cursor-pointer hover:border-primary transition-colors" data-alt="User profile avatar gradient" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA6ULsTZfmdKbQbE151cmPt-mWcteuUOy5hUjSYw6EnBNsKhui5sMa6Iystl0Umt6YNQ_lE-T84oxKvsHraqlwJNExlEHL80LaSU-dpkxZbhPlnkRJWay6Cc5l0DWR1sGV50-yjAC4AesJAhgtYeugiSnuFktQjnp_TRoFUtnL8ETooP7RpLFTfxnc70Cew7kczA-m18jW3S3RLqBHhnKKiB480y2lv1cVcvd1s8bIlDJEXjlQJ2PJVXF8lPZxAnA2CuLoiDtJUff_U");'></div>
-<div class="flex flex-col gap-6 w-full items-center">
-<button class="group flex items-center justify-center p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-background-dark transition-all">
-<span class="material-symbols-outlined text-[28px]">dashboard</span>
-</button>
-</div>
-</div>
-</nav>
-<main class="relative flex-1 h-full w-full overflow-hidden bg-background-dark cursor-grab active:cursor-grabbing">
-<div class="absolute inset-0 bg-dot-pattern opacity-40 pointer-events-none transform scale-100 origin-center"></div>
-<div class="absolute top-6 left-6 z-40 bg-surface-darker/80 backdrop-blur rounded-full p-3 border border-[#316847] shadow-lg flex items-center justify-center">
-<a class="text-[#90cba8] hover:text-primary transition-colors flex items-center" href="#">
-<span class="material-symbols-outlined text-[20px]">home</span>
-</a>
-</div>
-<div class="absolute inset-0 top-0 left-0 w-[200%] h-[200%] transform -translate-x-1/4 -translate-y-1/4 origin-center">
-</div>
-<div class="absolute bottom-8 right-8 z-40 w-48 h-32 bg-surface-darker/90 backdrop-blur border border-[#316847] rounded-lg shadow-xl overflow-hidden hidden md:block">
-<div class="relative w-full h-full bg-dot-pattern opacity-50">
-<div class="absolute top-[25%] left-[25%] w-[50%] h-[50%] border-2 border-primary bg-primary/10 shadow-[0_0_10px_rgba(13,242,105,0.2)] rounded-sm"></div>
-</div>
-</div>
-</main>
-</div>
-</body></html>
+:root {
+    --bg-color: #050d0a;       /* Fundo muito escuro */
+    --dot-color: #1c3329;      /* Cor dos pontos do grid */
+    --ui-bg: #0d1a16;          /* Fundo dos elementos de UI */
+    --accent: #2d5e45;         /* Verde destaque (botões/icones) */
+    --text-color: #8dafa0;     /* Texto claro esverdeado */
+    --border-ui: #1e3a2f;      /* Bordas sutis */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none; /* Impede seleção de texto ao arrastar */
+}
+
+body {
+    background-color: var(--bg-color);
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* Remove barras de rolagem nativas */
+    font-family: sans-serif;
+    color: var(--text-color);
+}
+
+/* --- UI LAYER --- */
+.ui-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Deixa cliques passarem para o world */
+    z-index: 100;
+}
+
+/* Reativa cliques nos elementos de UI */
+.ui-layer > * {
+    pointer-events: auto;
+}
+
+/* Sidebar */
+.sidebar {
+    position: absolute;
+    left: 15px;
+    top: 90px; /* Abaixo do header */
+    width: 50px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-icon {
+    width: 45px;
+    height: 45px;
+    background: #0f241d;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4cd964; /* Verde brilhante do ícone */
+    border: 1px solid var(--border-ui);
+    cursor: pointer;
+}
+
+/* Top Left Header */
+.top-left-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); /* Gradiente placeholder */
+    background: radial-gradient(circle at 30% 30%, #e6dada, #d4a373); /* Simulando o da imagem */
+}
+
+.home-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ui-bg);
+    border: 1px solid var(--border-ui);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.breadcrumbs {
+    background: var(--ui-bg);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border-ui);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.arrow {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Top Right Config */
+.config-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: var(--ui-bg);
+    width: 40px; /* Simplificado como icone por enquanto */
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border-ui);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Minimap */
+.minimap-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 160px;
+    height: 100px;
+    background: var(--ui-bg);
+    border: 1px solid var(--border-ui);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.minimap-viewport {
+    width: 40px;
+    height: 25px;
+    border: 1px solid #4cd964;
+    position: absolute;
+    top: 50%; /* Centralizado por enquanto (mockup) */
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Context Menu */
+.context-menu {
+    position: absolute;
+    background: #1a2e26;
+    border: 1px solid var(--border-ui);
+    border-radius: 6px;
+    padding: 5px 0;
+    min-width: 150px;
+    display: none; /* Escondido */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.menu-item {
+    padding: 8px 15px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #fff;
+}
+
+.menu-item:hover {
+    background: var(--accent);
+}
+
+/* --- WORLD (Infinite Space) --- */
+.world {
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0; /* Importante para o zoom funcionar a partir do topo/esq */
+    /* Cria o grid de pontos infinito */
+    background-image: radial-gradient(var(--dot-color) 1.5px, transparent 1.5px);
+    background-size: 30px 30px; /* Espaçamento dos pontos */
+    background-position: 0 0;
+}
+
+/* Elemento genérico para teste */
+.element {
+    position: absolute;
+    width: 150px;
+    height: 100px;
+    background: rgba(45, 94, 69, 0.3);
+    border: 1px solid #4cd964;
+    border-radius: 4px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+}
+
+.element:active {
+    cursor: grabbing;
+}
