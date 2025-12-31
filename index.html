@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Infinito</title>
+    <title>Canvas Infinito v8: Fluid</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="breadcrumbs"><span class="crumb active">Brain</span></div>
+    <div id="sidebar"></div>
+
     <div id="viewport">
         <div id="world">
-            <div class="card" data-x="300" data-y="200" style="transform: translate(300px, 200px);">
-                <h2>Bem-vindo</h2>
-                <p>Clique no fundo para arrastar.<br>Clique no card para mover.</p>
-            </div>
-
-            <div class="card" data-x="600" data-y="400" style="transform: translate(600px, 400px); background: #2c2c2c;">
-                <h2>Navegação</h2>
-                <p>Use a rodinha do mouse (scroll) para Zoom e clique com ela para Pan.</p>
+            <svg id="connections-layer"></svg>
+            <div id="card-root" class="card" data-x="300" data-y="200" style="transform: translate(300px, 200px);">
+                <h2 contenteditable="true">Brain (Início)</h2>
+                <p contenteditable="true">Edite este texto e dê duplo clique.</p>
             </div>
         </div>
-        
         <div id="hud">Zoom: <span id="zoom-level">100%</span></div>
+    </div>
+
+    <div id="context-menu"></div>
+    <div id="connection-picker">
+        <h3 style="color:#fff; margin-top:0;">Conectar com:</h3>
+        <div id="picker-list"></div>
+        <button onclick="closePicker()" style="margin-top:10px; width:100%; padding: 5px; cursor: pointer;">Cancelar</button>
     </div>
 
     <script src="script.js"></script>
