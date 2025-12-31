@@ -1,60 +1,29 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Infinite Canvas</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: "class",
-      theme: {
-        extend: {
-          colors: {
-            primary: "#0df269",
-            "background-dark": "#102217",
-            "surface-darker": "#0b1811",
-          },
-          fontFamily: {
-            display: ["Spline Sans", "sans-serif"],
-          },
-        },
-      },
-    };
-  </script>
-
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Infinito</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+<body>
 
-<body class="bg-background-dark font-display text-white overflow-hidden h-screen w-screen select-none">
+    <div id="viewport">
+        <div id="world">
+            <div class="card" data-x="300" data-y="200" style="transform: translate(300px, 200px);">
+                <h2>Bem-vindo</h2>
+                <p>Clique no fundo para arrastar.<br>Clique no card para mover.</p>
+            </div>
 
-<div class="relative h-full w-full flex">
-
-  <nav class="z-50 flex flex-col items-center w-20 h-full py-6 bg-surface-darker/90 backdrop-blur-md border-r border-[#316847]">
-    <div class="size-10 rounded-full bg-gradient-to-br from-green-400 to-yellow-400 border-2 border-primary/50"></div>
-  </nav>
-
-  <main id="viewport" class="relative flex-1 overflow-hidden cursor-grab active:cursor-grabbing">
-    <div id="canvas"></div>
-
-    <div class="absolute top-6 left-6 z-40 bg-surface-darker/80 backdrop-blur border border-[#316847] rounded-full w-10 h-10 flex items-center justify-center">
-      <span class="material-symbols-outlined text-[18px] text-[#90cba8]">home</span>
+            <div class="card" data-x="600" data-y="400" style="transform: translate(600px, 400px); background: #2c2c2c;">
+                <h2>Navegação</h2>
+                <p>Use a rodinha do mouse (scroll) para Zoom e clique com ela para Pan.</p>
+            </div>
+        </div>
+        
+        <div id="hud">Zoom: <span id="zoom-level">100%</span></div>
     </div>
 
-    <div class="absolute bottom-8 right-8 z-40 w-48 h-32 bg-surface-darker/90 backdrop-blur border border-[#316847] rounded-lg shadow-xl overflow-hidden hidden md:block">
-      <div class="relative w-full h-full bg-dot-pattern opacity-70">
-        <div class="absolute top-[25%] left-[25%] w-[50%] h-[50%] border-2 border-primary bg-primary/10 rounded-sm"></div>
-      </div>
-    </div>
-  </main>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
