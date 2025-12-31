@@ -98,3 +98,45 @@ body, html {
 }
 .picker-option { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; color: #e0e0e0;}
 .picker-option:hover { background: #333; }
+
+/* --- MODAL EDITOR (Janela de Edição) --- */
+.modal-overlay {
+    display: none; /* Começa escondido */
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Fundo escurecido transparente */
+    z-index: 9000; /* Fica acima de absolutamente tudo */
+    align-items: center; justify-content: center;
+}
+
+/* Quando ativado via JS, muda para flex para centralizar */
+.modal-overlay.active { display: flex; }
+
+.modal-content {
+    background: #1e1e1e; padding: 25px; border-radius: 12px;
+    width: 400px; border: 1px solid #bb86fc;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; gap: 15px;
+}
+
+.modal-content h3 { margin: 0; color: #bb86fc; }
+
+/* Estilos dos Inputs */
+#editor-title-input {
+    background: #2c2c2c; border: 1px solid #444; color: #fff;
+    padding: 10px; border-radius: 6px; font-size: 1.1rem; outline: none;
+}
+
+#editor-body-input {
+    background: #2c2c2c; border: 1px solid #444; color: #aaa;
+    padding: 10px; border-radius: 6px; font-size: 0.9rem;
+    height: 150px; resize: none; outline: none; font-family: sans-serif;
+}
+
+/* Botões do rodapé do modal */
+.modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+
+.btn-save { background: #bb86fc; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; color: #000;}
+.btn-save:hover { background: #9a67ea; }
+
+.btn-cancel { background: transparent; border: 1px solid #555; color: #fff; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
+.btn-cancel:hover { background: #333; }
