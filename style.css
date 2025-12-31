@@ -1,18 +1,28 @@
+* {
+  box-sizing: border-box;
+}
+
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
+
 ::-webkit-scrollbar-track {
-    background: #102217; 
+  background: #102217;
 }
+
 ::-webkit-scrollbar-thumb {
-    background: #183423; 
-    border-radius: 4px;
+  background: #183423;
+  border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: #316847; 
-}
+
 .bg-dot-pattern {
-    background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
-    background-size: 32px 32px;
+  background-image: radial-gradient(#316847 1.5px, transparent 1.5px);
+  background-size: 32px 32px;
+}
+
+#canvas {
+  width: 200%;
+  height: 200%;
+  transform: translate(-25%, -25%) scale(1);
 }
